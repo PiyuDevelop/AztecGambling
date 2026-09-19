@@ -164,15 +164,7 @@ function CDGClient:EnterForMe()
 end
 
 function CDGClient:OpenTradeWinner()
-	if (self.current_game and self.current_game.winner) then
-		if (TradeFrame:IsVisible()) then
-			local copper = self.current_game.cash_winnings * 100 * 100 
-			SetTradeMoney(copper)
-			MoneyInputFrame_SetCopper(TradePlayerInputMoneyFrame, copper)
-		else 
-			InitiateTrade(self.current_game.winner)
-		end
-	end
+	InitiateTrade(self.current_game.winner)
 end
 
 -- Lock Position for UI  
@@ -228,8 +220,7 @@ function CDGClient:ConstructUI()
 			-- Disabled for now, OpenTradeWinner isn't working
 			open_trade = {
 				width = 97,
-				label = "Payout",
-				disabled = true,
+				label = "Open Trade",
 				click_callback = function() self:OpenTradeWinner() end
 			}
 		}
@@ -264,9 +255,6 @@ function CDGClient:ConstructUI()
 		self.ui[button_name]:SetText(button_settings.label)
 		self.ui[button_name]:SetWidth(button_settings.width)
 		self.ui[button_name]:SetCallback("OnClick", button_settings.click_callback)
-		if button_settings.disabled then
-			self.ui[button_name]:SetDisabled(true)
-		end
 
 		self.ui.CDG_Frame:AddChild(self.ui[button_name])
 	end
