@@ -220,7 +220,7 @@ function CDGClient:ConstructUI()
 			-- Disabled for now, OpenTradeWinner isn't working
 			open_trade = {
 				width = 97,
-				label = "Open Trade",
+				label = "Trade",
 				click_callback = function() self:OpenTradeWinner() end
 			}
 		}

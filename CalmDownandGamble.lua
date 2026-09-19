@@ -1028,10 +1028,9 @@ function CalmDownandGamble:ConstructUI()
 				click_callback = function() self:RollForMe() end
 			},
 			-- TODO : Make this common with CDGClient
-			-- Disabled for now, OpenTradeWinner isn't working - use "PAY!" to re-announce the payout instead
 			open_trade = {
-				width = 120,
-				label = "Open Trade",
+				width = 100,
+				label = "Trade",
 				click_callback = function() self:OpenTradeWinner() end
 			},
 			repeat_payout = {
