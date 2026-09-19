@@ -246,6 +246,9 @@ function CalmDownandGamble:StartRolls()
 	-- Cancel the countdown to start if its there
 	self:CancelAllTimers()
 
+	-- Players have 1 minute to roll - RollStatus() reports how much is left
+	self.game.data.roll_deadline = GetTime() + 60
+
 	-- Turn-based modes (ex: Countdown) run their own start sequence
 	if self.game.mode.turn_based then
 		self:StartCountdownTurn()
@@ -399,6 +402,11 @@ function CalmDownandGamble:CheckRollsComplete(print_players)
 	local rolls_complete = true
 
 	self:PrintDebug("CheckRollsComplete() Called")
+
+	if print_players and self.game.data.roll_deadline then
+		local seconds_left = math.max(0, math.floor(self.game.data.roll_deadline - GetTime()))
+		self:MessageChat("Time left to roll: "..seconds_left.." seconds")
+	end
 
 	-- Once Blackjack is past the deal, completion is tracked via
 	-- blackjack_active/CheckBlackjackHandsComplete, not raw rolls
