@@ -187,6 +187,7 @@ end
 -- (stage_id = 1) Game will always start here in start game
 function CalmDownandGamble:StartGame()
 	-- Reset & Init Current GAME
+	self.game.data = nil
 	self.game.data = {
 		accepting_players = true,
 		accepting_rolls = false,
@@ -510,7 +511,6 @@ function CalmDownandGamble:EndGame()
 	self:UnregisterChatEvents()
 	self:ResetGameStage()
 	self.previous_gameData = self:deepcopy(self.game.data)
-	self.game.data = nil
 end
 
 
@@ -971,17 +971,10 @@ function CalmDownandGamble:TimedStart()
 end
 
 -- NEEDS TO BE COMMON WITH CDGCLIENT! TODO!
-function CalmDownandGamble:OpenTradeWinner()		
-	if (self.game.data and self.game.data.winner) then
-		if (TradeFrame:IsVisible()) then
-			local copper = self.game.data.cash_winnings * 100 * 100 
-			SetTradeMoney(copper)
-			MoneyInputFrame_SetCopper(TradePlayerInputMoneyFrame, copper)
-		else 
-			InitiateTrade(self.game.data.winner)
-		end
-	end
+function CalmDownandGamble:OpenTradeWinner()
+	InitiateTrade(self.game.data.winner)
 end
+
 -- UI ELEMENTS 
 -- ======================================================
 function CalmDownandGamble:ShowUI()
@@ -1043,11 +1036,9 @@ function CalmDownandGamble:ConstructUI()
 				click_callback = function() self:RollForMe() end
 			},
 			-- TODO : Make this common with CDGClient
-			-- Disabled for now, OpenTradeWinner isn't working - use "PAY!" to re-announce the payout instead
 			open_trade = {
 				width = 100,
-				label = "Payout",
-				disabled = true,
+				label = "Trade",
 				click_callback = function() self:OpenTradeWinner() end
 			},
 			repeat_payout = {
