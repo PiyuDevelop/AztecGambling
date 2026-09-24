@@ -74,6 +74,19 @@ All commands are under `/ag`:
 
 - **Payout** is disabled on both windows — it isn't wiring up the trade window correctly right now. Use the **PAY!** button (or just read the chat message) to see who owes whom, and trade manually.
 
+## Support
+
+Aztec Gambling is free and always will be. If you enjoy it and want to support new updates and game modes, you can leave a donation — completely optional, and it never unlocks anything extra.
+
+*Donation links coming soon.*
+
+<!-- Replace the line above with the real links once they're set up, e.g.:
+- [Ko-fi](https://ko-fi.com/<user>)
+- [GitHub Sponsors](https://github.com/sponsors/PiyuDevelop)
+- [PayPal](https://paypal.me/<user>)
+Blizzard's add-on policy only allows donation requests outside the game:
+never add these links to the addon's windows, tooltips or chat messages. -->
+
 ## Credits
 
 ### Aztec Gambling
