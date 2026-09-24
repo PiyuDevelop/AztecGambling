@@ -1,6 +1,6 @@
 ## Interface: 120100
 ## Title: Aztec Gambling
-## Author: Fuzz Magtheridon-US (Mal'Ganis-US)
+## Author: Jayred-Tichondrius
 ## Version: 10.0.2
 ## Notes: AZTEC GAMBLING!
 ## DefaultState: Enabled
