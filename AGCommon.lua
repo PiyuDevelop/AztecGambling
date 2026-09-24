@@ -83,7 +83,7 @@ end
 
 function AztecGambling:PrintSlashCommandHelp()
     self:Print("Aztec Gambling Slash Commands: ")
-    self:Print(" /azg <command> ")
+    self:Print(" /ag <command> ")
     self:Print("    <no command>  - Toggles UI like the minimap button does")
     self:Print("    auto - Toggles auto pop up of rolling UI")
     self:Print("    stats - Prints the hall of fame and shame")
@@ -147,15 +147,15 @@ function AztecGambling:SlashCommandHandler(...)
     else 
         self:Print("Unrecognized AG Slash Command: ")
         self:Print(command)
-        self:Print("Use /azg help for more information.")
+        self:Print("Use /ag help for more information.")
 
     end
 end
 
 -- Called from constructor of main addon
 function AztecGambling:RegisterSlashCommands() 
-	self:RegisterChatCommand("azg", "SlashCommandHandler")
+	self:RegisterChatCommand("ag", "SlashCommandHandler")
 
     -- Legacy Support - TODO: Remove
-	self:RegisterChatCommand("azgm", "ShowUI")
+	self:RegisterChatCommand("agm", "ShowUI")
 end

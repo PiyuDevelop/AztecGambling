@@ -12,14 +12,14 @@ AG_MESSAGES = {
 
 	-- Game start / join flow
 	CUSTOM_CHANNEL_ANNOUNCE = function(channel_name)
-		return "Just started a Gambling Round in a custom channel! To join in use /azg joinChat or /join "..channel_name
+		return "Just started a Gambling Round in a custom channel! To join in use /ag joinChat or /join "..channel_name
 	end,
 	WELCOME = function(mode_label, gold_amount)
 		return "Aztec Gambiling is now in session! Mode: "..mode_label..", Bet: "..gold_amount.." gold"
 	end,
 	PRESS_TO_JOIN = "Press 1 to Join!",
 	TELL_FRIENDS = function(channel_name)
-		return "Tell your friends to join the channel by /azg join or /join "..channel_name
+		return "Tell your friends to join the channel by /ag join or /join "..channel_name
 	end,
 	JOIN_SIGNAL = "1", -- the actual chat text a "join" / "enter for me" click sends
 	LAST_CALL = "Last call! 10 seconds left!",
