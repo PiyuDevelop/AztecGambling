@@ -1,7 +1,7 @@
-# Calm Down and Gamble!
+# Aztec Gambling!
 
 This addon was created to compete with addons like Cross Gambling.
-CalmDownandGambling  brings more channel options (Say, Party, Raid), and FOUR
+Aztec Gambling brings more channel options (Say, Party, Raid), and FOUR
 NEW game modes (Yahtzee, High-Low, Inverse, MiddleMan)! *Taking Suggestions For
 More Game Modes!!*
 
@@ -33,14 +33,28 @@ than 99123). The game scores all the players, lists the rankings in order, and
 pays out what the user of the addon has decided for the game (textbox entry). 
 
 ### Slash Commands
-*/cdgreset* - Resets the rankings
+*/ag* - Toggles the Casino UI (same as clicking the minimap icon)
 
-*/cdgshow*  - Show the Casino UI
+*/agm* - Show the Casino UI
 
-*/cdghide*  - Hide the Casino UI
+*/ag stats* - Prints the rankings
+
+*/ag resetStats* - Resets the rankings
+
+*/ag ban <player>* - Bans a player from entering games
+
+*/ag unban <player>* - Unbans a player
+
+*/ag resetBans* - Clears all bans
+
+*/ag join [channel]* - Join (or create) a custom gambling channel for your guild
+
+*/ag leave* - Leave the custom gambling channel
+
+*/ag help* - Prints the list of commands in-game
 
 ### Buttons
-*NewGame* - Start a new game of CalmDown and gamble with the current gold
+*NewGame* - Start a new game of Aztec Gambling with the current gold
 amount and game mode.
 
 *LastCall* - If the game is currently accepting entries will set a timer and
@@ -68,24 +82,17 @@ toggle through options
 
 *Reset* - Stop the currently active game. 
 
-## *New* Calm Down and Gamble CLIENT
+## *New* Aztec Gambling CLIENT
 New with the latest release we've added a client window! If someone in your
-guild or group is running a Calm Down and Gamble Casino and you have this addon
+guild or group is running an Aztec Gambling Casino and you have this addon
 installed when they start a game you will be presented with a pop up that helps
 you gamble!
 
 ### Slash Commands
-*/cdgcshow* - Shows the calm down and gamble client. Not necessary as it shows
-up when a new game is started, but if you want to bring it up ahead of time you
-can
+*/ag* - Toggles the client. Not necessary as it shows up when a new game is
+started, but if you want to bring it up ahead of time you can
 
-*/cdgchide* - Hides the client
-
-*/cdgcdisable* - Disables the auto-opening of the client GUI when a new game
-starts
-
-*/cdgcenable* - Enables the auto-opening of the client GUI when a new game
-starts
+*/ag auto* - Toggles the auto-opening of the client GUI when a new game starts
 
 ### Buttons 
 *Roll* - Rolls the correct range based on the current game settings
