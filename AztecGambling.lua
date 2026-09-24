@@ -1,12 +1,12 @@
 
-CalmDownandGamble = LibStub("AceAddon-3.0"):NewAddon("CalmDownandGamble", "AceConsole-3.0", "AceComm-3.0", "AceEvent-3.0", "AceTimer-3.0", "AceHook-3.0", "AceSerializer-3.0")
-local CalmDownandGamble	= LibStub("AceAddon-3.0"):GetAddon("CalmDownandGamble")
+AztecGambling = LibStub("AceAddon-3.0"):NewAddon("AztecGambling", "AceConsole-3.0", "AceComm-3.0", "AceEvent-3.0", "AceTimer-3.0", "AceHook-3.0", "AceSerializer-3.0")
+local AztecGambling	= LibStub("AceAddon-3.0"):GetAddon("AztecGambling")
 local AceGUI = LibStub("AceGUI-3.0")
 
 
 -- Initializer 
 -- =============
-function CalmDownandGamble:OnInitialize()
+function AztecGambling:OnInitialize()
 	self:PrintDebug("On Initialize")
 
 	-- Member Initializers
@@ -28,7 +28,7 @@ function CalmDownandGamble:OnInitialize()
 			}
 		}
 	}
-    self.db = LibStub("AceDB-3.0"):New("CalmDownandGambleDB", defaults)
+    self.db = LibStub("AceDB-3.0"):New("AztecGamblingDB", defaults)
 	
 	self.game = {
 		mode_id = self.db.global.game_mode_index,
@@ -49,7 +49,7 @@ function CalmDownandGamble:OnInitialize()
 			{ label = "Party" ,   const = "PARTY" ,  addon_const = "PARTY", callback = "CHAT_MSG_PARTY" ,  callback_leader = "CHAT_MSG_PARTY_LEADER" }, -- Index 2
 			{ label = "Guild" ,   const = "GUILD" ,  addon_const = "GUILD", callback = "CHAT_MSG_GUILD"     },                     -- Index 3
 			{ label = "Say"   ,   const = "SAY"   ,  addon_const = "GUILD", callback = "CHAT_MSG_SAY"       },                     -- Index 4
-    		{ label = "CDG", const = "CHANNEL", addon_const = "CHANNEL", callback = "CHAT_MSG_CHANNEL" },                     -- Index 5
+    		{ label = "AG", const = "CHANNEL", addon_const = "CHANNEL", callback = "CHAT_MSG_CHANNEL" },                     -- Index 5
 		}
 	}	
 
@@ -72,12 +72,12 @@ end
 
 -- Chat Channels
 -- =================
-function CalmDownandGamble:SetChatChannel()
+function AztecGambling:SetChatChannel()
 	self.chat.channel = self.chat.CHANNEL_CONSTS[self.chat.channel_id]
 	self.chat.num_channels = table.getn(self.chat.CHANNEL_CONSTS)
 
 	-- Only offer Say, Party and Raid in the dropdown, in that order - Guild and
-	-- CDG stay fully usable internally, they're just not shown as a choice here
+	-- AG stay fully usable internally, they're just not shown as a choice here
 	local visible_labels = { "Say", "Party", "Raid" }
 	local channel_list, channel_order = {}, {}
 	for _, label in ipairs(visible_labels) do
@@ -95,21 +95,21 @@ function CalmDownandGamble:SetChatChannel()
 	self:PrintDebug(self.chat.channel.label)
 end
 
-function CalmDownandGamble:SelectChatChannel(channel_id)
+function AztecGambling:SelectChatChannel(channel_id)
 	self.chat.channel_id = channel_id
 	self.db.global.chat_index = channel_id
 	self:SetChatChannel()
 end
 
-function CalmDownandGamble:MessageChat(msg)
+function AztecGambling:MessageChat(msg)
 	SendChatMessage(msg, self.chat.channel.const, nil, self.db.global.custom_channel.index)
 end
 
-function CalmDownandGamble:MessageAddon(event, msg)
+function AztecGambling:MessageAddon(event, msg)
 	self:SendCommMessage(event, msg, self.chat.channel.addon_const, tostring(self.db.global.custom_channel.index))
 end
 
-function CalmDownandGamble:RegisterChatEvents()
+function AztecGambling:RegisterChatEvents()
 	self:RegisterEvent("CHAT_MSG_SYSTEM", function(...) self:RollCallback(...) end)
 	self:RegisterEvent(self.chat.channel.callback, function(...) self:ChatChannelCallback(...) end)
 	if (self.chat.channel.callback_leader) then
@@ -117,7 +117,7 @@ function CalmDownandGamble:RegisterChatEvents()
 	end
 end
 
-function CalmDownandGamble:UnregisterChatEvents()
+function AztecGambling:UnregisterChatEvents()
 	self:CancelAllTimers()
 	self:UnregisterEvent("CHAT_MSG_SYSTEM")
 	self:UnregisterEvent(self.chat.channel.callback)
@@ -128,9 +128,9 @@ end
 
 -- Game Modes
 -- ================
-function CalmDownandGamble:SetGameMode()
+function AztecGambling:SetGameMode()
 	-- Loaded from external File
-	GAME_MODES = { CDG_HILO, CDG_INVERSE, CDG_BIGTWOS, CDG_LILONES, CDG_YAHTZEE, CDG_CURLING, CDG_COUNTDOWN, CDG_BLACKJACK }
+	GAME_MODES = { AG_HILO, AG_INVERSE, AG_BIGTWOS, AG_LILONES, AG_YAHTZEE, AG_CURLING, AG_COUNTDOWN, AG_BLACKJACK }
 	self.game.mode = GAME_MODES[self.game.mode_id]
 	self.game.num_modes = table.getn(GAME_MODES)
 
@@ -145,7 +145,7 @@ function CalmDownandGamble:SetGameMode()
 end
 
 
-function CalmDownandGamble:SelectGameMode(mode_id)
+function AztecGambling:SelectGameMode(mode_id)
 	self.game.mode_id = mode_id
 	self.db.global.game_mode_index = mode_id
 	self:SetGameMode()
@@ -154,7 +154,7 @@ end
 
 -- Game Stages
 -- =====================
-function CalmDownandGamble:SetGameStage() 
+function AztecGambling:SetGameStage() 
 	GAME_STAGES = {
 			{ label = "NewGame",  callback = function() self:StartGame() end }, -- Index 1
 			{ label = "LastCall",   callback = function() self:LastCall() end }, -- Index 2
@@ -169,13 +169,13 @@ function CalmDownandGamble:SetGameStage()
 	self:PrintDebug(self.game.stage.label)
 end
 
-function CalmDownandGamble:ResetGameStage()
+function AztecGambling:ResetGameStage()
 	self.game.stage_id = 1
 	self:SetGameStage()
 end
 
 
-function CalmDownandGamble:ToggleGameStage()
+function AztecGambling:ToggleGameStage()
 	self.game.stage.callback()
 	if self.game.stage_id < self.game.num_stages then 
 		self.game.stage_id = self.game.stage_id + 1 
@@ -185,7 +185,7 @@ end
 
 -- Stage Callbacks
 -- (stage_id = 1) Game will always start here in start game
-function CalmDownandGamble:StartGame()
+function AztecGambling:StartGame()
 	-- Reset & Init Current GAME
 	self.game.data = nil
 	self.game.data = {
@@ -214,36 +214,36 @@ function CalmDownandGamble:StartGame()
 	self:PrintDebug("Initialized Current GAME")
 
 	-- In case of custom channel, we need to let the guild know! 
-	if ((self.chat.channel.const == "CHANNEL") and (self.db.global.custom_channel.index == nil)) then 
+	if ((self.chat.channel.const == "CHANNEL") and (self.db.global.custom_channel.index == nil)) then
 		self:JoinCustomChannel(nil)
-		SendChatMessage("Just started a Gambling Round in a custom channel! To join in use /cdg joinChat or /join "..self.db.global.custom_channel.name, "GUILD")
+		SendChatMessage(AG_MESSAGES.CUSTOM_CHANNEL_ANNOUNCE(self.db.global.custom_channel.name), "GUILD")
 	end
 
 	-- Welcome Message!
-	local welcome_msg = "CDG is now in session! Mode: "..self.game.mode.label..", Bet: "..self.game.data.gold_amount.." gold"
+	local welcome_msg = AG_MESSAGES.WELCOME(self.game.mode.label, self.game.data.gold_amount)
 	self:MessageChat(welcome_msg)
 	if (self.game.mode.custom_intro ~= nil) then self:MessageChat(self.game.mode.custom_intro()) end
-	self:MessageChat("Press 1 to Join!")
+	self:MessageChat(AG_MESSAGES.PRESS_TO_JOIN)
 
 	-- TODO: Why is this BS different?
-	if (self.chat.channel.const == "CHANNEL") then 
-		self:MessageChat("Tell your friends to join the channel by /cdg join or /join "..self.db.global.custom_channel.name) 
+	if (self.chat.channel.const == "CHANNEL") then
+		self:MessageChat(AG_MESSAGES.TELL_FRIENDS(self.db.global.custom_channel.name))
 	end
 	
 	-- Notify Clients of New GAME
 	local start_args = self.game.data.roll_lower.." "..self.game.data.roll_upper.." "..self.game.data.gold_amount.." "..self.chat.channel.const
-	self:MessageAddon("CDG_NEW_GAME", start_args)
+	self:MessageAddon("AG_NEW_GAME", start_args)
 	self:PrintDebug(start_args)
 end
 
 -- (stage_id = 2) Count Down to Game Start
-function CalmDownandGamble:LastCall()
-	self:MessageChat("Last call! 10 seconds left!")
+function AztecGambling:LastCall()
+	self:MessageChat(AG_MESSAGES.LAST_CALL)
 	self:ScheduleTimer("TimedStart", 10)
 end
 
 -- (stage_id = 3) After accepting entries via chat callbacks, start the rolls
-function CalmDownandGamble:StartRolls()
+function AztecGambling:StartRolls()
 	-- Cancel the countdown to start if its there
 	self:CancelAllTimers()
 
@@ -268,37 +268,37 @@ function CalmDownandGamble:StartRolls()
 	-- Make sure we have enough players
 	self:PrintDebug(self:TableLength(self.game.data.player_rolls))
 	if (self:TableLength(self.game.data.player_rolls) <= 1) then
-		self:MessageChat("Can't start a game with less than 2 players")
+		self:MessageChat(AG_MESSAGES.NOT_ENOUGH_PLAYERS)
 		self.game.stage_id = self.game.stage_id - 1
 		self:SetGameStage()
-		return 
+		return
 	end
 
 	-- Allow roll callbacks
 	self.game.data.accepting_rolls = true
 	self.game.data.accepting_players = false
-	
+
 	-- Tell Tiebreakers Who Has to Roll
 	local roll_msg = ""
-	if self.game.data.high_tiebreaker then 
-		self:MessageChat("The Winners Bracket! High Tiebreaker:")
+	if self.game.data.high_tiebreaker then
+		self:MessageChat(AG_MESSAGES.HIGH_TIEBREAKER)
 		self:PrintTieBreakerPlayers(self.game.data.player_rolls)
-	elseif self.game.data.low_tiebreaker then 
-		self:MessageChat("The Losers! Low Tiebreaker:")
+	elseif self.game.data.low_tiebreaker then
+		self:MessageChat(AG_MESSAGES.LOW_TIEBREAKER)
 		self:PrintTieBreakerPlayers(self.game.data.player_rolls)
 	end
-	
+
 	-- Off to the races!
 	self:MessageChat(roll_msg)
-	self:MessageChat("Time to roll! Good Luck! Command:   /roll "..self.game.data.roll_range)
+	self:MessageChat(AG_MESSAGES.ROLL_GOODLUCK(self.game.data.roll_range))
 end
 
 -- (Countdown) Kick off a turn-based game: settle who goes first with a 1-100 roll-off
-function CalmDownandGamble:StartCountdownTurn()
+function AztecGambling:StartCountdownTurn()
 	local required = self.game.mode.max_players or 2
 
 	if (self:TableLength(self.game.data.player_rolls) ~= required) then
-		self:MessageChat("Countdown needs exactly "..required.." players.")
+		self:MessageChat(AG_MESSAGES.COUNTDOWN_NEEDS_PLAYERS(required))
 		self.game.stage_id = self.game.stage_id - 1
 		self:SetGameStage()
 		return
@@ -310,19 +310,19 @@ function CalmDownandGamble:StartCountdownTurn()
 end
 
 -- (Countdown) Roll-off to decide who goes first - ties reroll
-function CalmDownandGamble:StartCountdownStarterRoll()
+function AztecGambling:StartCountdownStarterRoll()
 	self.game.data.determining_starter = true
 	self.game.data.roll_range = "(1-100)"
 	self.game.data.player_rolls[self.game.data.turn_order[1]] = -1
 	self.game.data.player_rolls[self.game.data.turn_order[2]] = -1
 
-	self:MessageChat("Roll 1-100 to see who goes first! Command:   /roll (1-100)")
-	self:MessageAddon("CDG_TURN_UPDATE", "RollOff 1 100")
+	self:MessageChat(AG_MESSAGES.ROLL_OFF_FIRST)
+	self:MessageAddon("AG_TURN_UPDATE", "RollOff 1 100")
 	self:UpdateRollStatusUI()
 end
 
 -- (Countdown) Handle one player's roll-off roll; once both are in, higher starts (tie = reroll)
-function CalmDownandGamble:CountdownStarterRollCallback(player, roll, roll_range)
+function AztecGambling:CountdownStarterRollCallback(player, roll, roll_range)
 	if (roll_range ~= self.game.data.roll_range) then return end
 	if (self.game.data.player_rolls[player] ~= -1) then return end
 
@@ -335,7 +335,7 @@ function CalmDownandGamble:CountdownStarterRollCallback(player, roll, roll_range
 	end
 
 	if (self.game.data.player_rolls[p1] == self.game.data.player_rolls[p2]) then
-		self:MessageChat("Tie! Roll again to see who goes first.")
+		self:MessageChat(AG_MESSAGES.ROLL_OFF_TIE)
 		self:StartCountdownStarterRoll()
 		return
 	end
@@ -347,12 +347,12 @@ function CalmDownandGamble:CountdownStarterRollCallback(player, roll, roll_range
 	self.game.data.player_rolls[p2] = -1
 	self.game.data.turn_player = starter
 
-	self:MessageChat(starter.." rolled higher and goes first! Command:   /roll "..self.game.data.roll_range)
-	self:MessageAddon("CDG_TURN_UPDATE", starter.." "..self.game.data.roll_lower.." "..self.game.data.roll_upper)
+	self:MessageChat(AG_MESSAGES.ROLL_OFF_WINNER(starter, self.game.data.roll_range))
+	self:MessageAddon("AG_TURN_UPDATE", starter.." "..self.game.data.roll_lower.." "..self.game.data.roll_upper)
 end
 
 -- (Countdown) Handle one player's roll, pass the turn, or end the game on a 1
-function CalmDownandGamble:CountdownRollCallback(player, roll, roll_range)
+function AztecGambling:CountdownRollCallback(player, roll, roll_range)
 	if (not self.game.data.accepting_rolls) then return end
 	if (player ~= self.game.data.turn_player) then return end
 	if (roll_range ~= self.game.data.roll_range) then return end
@@ -379,26 +379,26 @@ function CalmDownandGamble:CountdownRollCallback(player, roll, roll_range)
 	self.game.data.player_rolls[opponent] = -1
 
 	self:UpdateRollStatusUI()
-	self:MessageChat(opponent.."'s turn! Command:   /roll "..self.game.data.roll_range)
-	self:MessageAddon("CDG_TURN_UPDATE", opponent.." "..self.game.data.roll_lower.." "..self.game.data.roll_upper)
+	self:MessageChat(AG_MESSAGES.OPPONENT_TURN(opponent, self.game.data.roll_range))
+	self:MessageAddon("AG_TURN_UPDATE", opponent.." "..self.game.data.roll_lower.." "..self.game.data.roll_upper)
 end
 
-function CalmDownandGamble:PrintTieBreakerPlayers(players)
+function AztecGambling:PrintTieBreakerPlayers(players)
 	tiebreaker_list = ""
 	for player, roll in pairs(players) do
 		-- TODO - Figure out how to use this for Yahtzee self.game.mode.fmt_score(roll)
-		tiebreaker_list = tiebreaker_list..player.." vs "
+		tiebreaker_list = tiebreaker_list..player..AG_MESSAGES.TIEBREAKER_VS
 	end
 	tiebreaker_list = tiebreaker_list:sub(1, -5)
 	self:MessageChat(tiebreaker_list)
 end
 
 -- (stage_id =4) Poll for Roll Status
-function CalmDownandGamble:RollStatus()
+function AztecGambling:RollStatus()
 	self:CheckRollsComplete(true)
 end
 
-function CalmDownandGamble:CheckRollsComplete(print_players)
+function AztecGambling:CheckRollsComplete(print_players)
 
 	local rolls_complete = true
 
@@ -406,7 +406,7 @@ function CalmDownandGamble:CheckRollsComplete(print_players)
 
 	if print_players and self.game.data.roll_deadline then
 		local seconds_left = math.max(0, math.floor(self.game.data.roll_deadline - GetTime()))
-		self:MessageChat("Time left to roll: "..seconds_left.." seconds")
+		self:MessageChat(AG_MESSAGES.TIME_LEFT(seconds_left))
 	end
 
 	-- Once Blackjack is past the deal, completion is tracked via
@@ -415,7 +415,7 @@ function CalmDownandGamble:CheckRollsComplete(print_players)
 		if print_players then
 			for player, active in pairs(self.game.data.blackjack_active) do
 				if active then
-					self:MessageChat("Player: "..player.." still needs to hit or stand")
+					self:MessageChat(AG_MESSAGES.PLAYER_NEEDS_HIT_OR_STAND(player))
 				end
 			end
 		end
@@ -426,7 +426,7 @@ function CalmDownandGamble:CheckRollsComplete(print_players)
 		if (roll == -1) then
 			rolls_complete = false
 			if print_players then
-				self:MessageChat("Player: "..player.." still needs to roll") 
+				self:MessageChat(AG_MESSAGES.PLAYER_NEEDS_ROLL(player))
 			end
 		end
 	end
@@ -443,7 +443,7 @@ function CalmDownandGamble:CheckRollsComplete(print_players)
 end
 
 -- (Blackjack) Deal is complete - flag naturals, then let players hit or stand
-function CalmDownandGamble:StartBlackjackHitPhase()
+function AztecGambling:StartBlackjackHitPhase()
 	self.game.data.dealt = true
 	self.game.data.roll_lower = self.game.mode.hit_lower
 	self.game.data.roll_upper = self.game.mode.hit_upper
@@ -452,28 +452,28 @@ function CalmDownandGamble:StartBlackjackHitPhase()
 	for player, total in pairs(self.game.data.player_rolls) do
 		if (tonumber(total) == 21) then
 			self.game.data.blackjack_active[player] = false
-			self:MessageChat(player.." has a natural BLACKJACK!")
+			self:MessageChat(AG_MESSAGES.NATURAL_BLACKJACK(player))
 		else
 			self.game.data.blackjack_active[player] = true
 		end
 	end
 
-	self:MessageChat("Dealt! Type 'hit' to draw another card or 'stand' to lock in your total.")
+	self:MessageChat(AG_MESSAGES.DEALT)
 	self:UpdateRollStatusUI()
 	self:CheckBlackjackHandsComplete()
 end
 
 -- (Blackjack) Once every player has stood or busted, hand off to scoring
-function CalmDownandGamble:CheckBlackjackHandsComplete()
+function AztecGambling:CheckBlackjackHandsComplete()
 	for player, active in pairs(self.game.data.blackjack_active) do
 		if active then return end
 	end
 	self:GameLoop()
 end
 
-function CalmDownandGamble:FinishGame()
+function AztecGambling:FinishGame()
 	self.game.mode.payout(self.game)
-	local payout_msg = self.game.data.loser.." owes "..self.game.data.winner.." "..self.game.data.cash_winnings.." gold!"
+	local payout_msg = AG_MESSAGES.PAYOUT(self.game.data.loser, self.game.data.winner, self.game.data.cash_winnings)
 	self.last_payout = payout_msg
 	self:MessageChat(payout_msg)
 	self:LogResults()
@@ -481,31 +481,31 @@ function CalmDownandGamble:FinishGame()
 end
 
 -- Re-announce the last payout, in case people missed it or started a new round before paying up
-function CalmDownandGamble:RepeatLastPayout()
+function AztecGambling:RepeatLastPayout()
 	if (self.last_payout == nil) then
-		self:MessageChat("No payout to repeat yet!")
+		self:MessageChat(AG_MESSAGES.NO_PAYOUT_YET)
 		return
 	end
 	self:MessageChat(self.last_payout)
 end
 
-function CalmDownandGamble:GameLoop()
-	if (CalmDownandGamble:EvaluateScores()) then
+function AztecGambling:GameLoop()
+	if (AztecGambling:EvaluateScores()) then
 		self:FinishGame()
 	end
 end
 
 
-function CalmDownandGamble:EndGame()
+function AztecGambling:EndGame()
 	-- Tell  the clients and UI were done
 	local end_args = self.game.data.winner.." "..self.game.data.loser.." "..self.game.data.cash_winnings
-	self:MessageAddon("CDG_END_GAME", end_args)
-	self.ui.CDG_Frame:SetStatusText(self.game.data.cash_winnings.."g  "..self.game.data.loser.." => "..self.game.data.winner)
+	self:MessageAddon("AG_END_GAME", end_args)
+	self.ui.AG_Frame:SetStatusText(self.game.data.cash_winnings.."g  "..self.game.data.loser.." => "..self.game.data.winner)
 	
 	-- Clear the Roll Status UI
-	self.ui.CDG_RollFrame:ReleaseChildren()
-	self.ui.CDG_RollFrame:Release()
-	self.ui.CDG_RollFrame = nil
+	self.ui.AG_RollFrame:ReleaseChildren()
+	self.ui.AG_RollFrame:Release()
+	self.ui.AG_RollFrame = nil
 
 	-- Reset Game Hooks and Data
 	self:UnregisterChatEvents()
@@ -514,16 +514,16 @@ function CalmDownandGamble:EndGame()
 end
 
 
-function CalmDownandGamble:ResetGame()
+function AztecGambling:ResetGame()
 	self:UnregisterChatEvents()
 	self.game.data = nil
 	self:ResetGameStage()
-	self:MessageChat("Game has been reset.")
+	self:MessageChat(AG_MESSAGES.GAME_RESET)
 end
 
 -- Utils
 -- ========
-function CalmDownandGamble:GameResultsCallback(...)
+function AztecGambling:GameResultsCallback(...)
 	local callback = select(1, ...)
 	local message = select(2, ...)
 	local chat = select(3, ...)
@@ -555,7 +555,7 @@ function CalmDownandGamble:GameResultsCallback(...)
 	end
 end
 
-function CalmDownandGamble:LogResults() 
+function AztecGambling:LogResults() 
 	self:PrintDebug("Winner: "..self.game.data.winner)
 	self:PrintDebug("Loser: "..self.game.data.loser)
 	self:PrintDebug("CASH: "..self.game.data.cash_winnings)
@@ -573,7 +573,7 @@ function CalmDownandGamble:LogResults()
 	end
 end
 
-function CalmDownandGamble:SetGoldAmount() 
+function AztecGambling:SetGoldAmount() 
 
 	local text_box = self.ui.gold_amount_entry:GetText()
 	local text_box_valid = (not string.match(text_box, "[^%d]")) and (text_box ~= '')
@@ -590,7 +590,7 @@ end
 -- Sorts the rolls base on the game mode sorting function
 -- The game mode sorting fucntion accepts rolls and returns a sorted table
 -- based on scores where the winner is always first, and the loser last
-function CalmDownandGamble:EvaluateScores()
+function AztecGambling:EvaluateScores()
 	self:PrintDebug("Evaluating Scores")
 	
 	local winning_roll, losing_roll, high_roller_playoff, low_roller_playoff = nil, nil, {}, {}
@@ -753,37 +753,37 @@ end
 -- ChatFrame Interaction Callbacks (Entry and Rolls)
 -- ==================================================== 
 
-function CalmDownandGamble:UpdateRollStatusUI()
+function AztecGambling:UpdateRollStatusUI()
 	if ((self.ui ~= nil) and (self.game.data ~= nil)) then
 
-		if (self.ui.CDG_RollFrame == nil) then
+		if (self.ui.AG_RollFrame == nil) then
 
 			-- Create the Rolling Frame and attach it to the casino frame
 			-- *THIS IS STUPID DO IT IN XML TODODODODO*TODO -- 
-			self.ui.CDG_RollFrame = AceGUI:Create("Frame")
-			self.ui.CDG_RollFrame:SetWidth(200)
-			self.ui.CDG_RollFrame:SetHeight(self.ui.CDG_Frame.frame:GetHeight() * 2)
-			self.ui.CDG_RollFrame:ClearAllPoints()
-			self.ui.CDG_RollFrame:SetPoint("BOTTOMLEFT", self.ui.CDG_Frame.frame, "BOTTOMRIGHT", 0, 0)
-			self.ui.CDG_RollFrame:SetTitle("Roll Status")
+			self.ui.AG_RollFrame = AceGUI:Create("Frame")
+			self.ui.AG_RollFrame:SetWidth(200)
+			self.ui.AG_RollFrame:SetHeight(self.ui.AG_Frame.frame:GetHeight() * 2)
+			self.ui.AG_RollFrame:ClearAllPoints()
+			self.ui.AG_RollFrame:SetPoint("BOTTOMLEFT", self.ui.AG_Frame.frame, "BOTTOMRIGHT", 0, 0)
+			self.ui.AG_RollFrame:SetTitle("Roll Status")
 			
 
 			-- Boiler plat code for a container object
-			self.ui.CDG_RollFrameScrollcontainer = AceGUI:Create("SimpleGroup") 
-			self.ui.CDG_RollFrameScrollcontainer:SetFullWidth(true)
-			self.ui.CDG_RollFrameScrollcontainer:SetHeight(self.ui.CDG_RollFrame.frame:GetHeight() - 75)
-			self.ui.CDG_RollFrameScrollcontainer:SetLayout("Fill") 
-			self.ui.CDG_RollFrame:AddChild(self.ui.CDG_RollFrameScrollcontainer)
+			self.ui.AG_RollFrameScrollcontainer = AceGUI:Create("SimpleGroup") 
+			self.ui.AG_RollFrameScrollcontainer:SetFullWidth(true)
+			self.ui.AG_RollFrameScrollcontainer:SetHeight(self.ui.AG_RollFrame.frame:GetHeight() - 75)
+			self.ui.AG_RollFrameScrollcontainer:SetLayout("Fill") 
+			self.ui.AG_RollFrame:AddChild(self.ui.AG_RollFrameScrollcontainer)
 
 			-- Attach a scrollbar to the container 
-			self.ui.CDG_RollFrameScroll = AceGUI:Create("ScrollFrame")
-			self.ui.CDG_RollFrameScroll:SetLayout("Flow") 
-			self.ui.CDG_RollFrameScrollcontainer:AddChild(self.ui.CDG_RollFrameScroll)
+			self.ui.AG_RollFrameScroll = AceGUI:Create("ScrollFrame")
+			self.ui.AG_RollFrameScroll:SetLayout("Flow") 
+			self.ui.AG_RollFrameScrollcontainer:AddChild(self.ui.AG_RollFrameScroll)
 
 		end
 
 		-- Refresh the list of players and their rolls
-		self.ui.CDG_RollFrameScroll:ReleaseChildren()	
+		self.ui.AG_RollFrameScroll:ReleaseChildren()	
 		for player, roll in self:sortedpairs(self.game.data.player_rolls, self.game.mode.sort_rolls) do
 
 			label = AceGUI:Create("Label")
@@ -794,14 +794,14 @@ function CalmDownandGamble:UpdateRollStatusUI()
 			end
 			label:SetFont("Fonts\\FRIZQT__.TTF", 16, "OUTLINE, MONOCHROME")
 			label:SetColor(255, 255, 0)
-			self.ui.CDG_RollFrameScroll:AddChild(label)
+			self.ui.AG_RollFrameScroll:AddChild(label)
 		end
 	
 	end
 end
 
 
-function CalmDownandGamble:RollCallback(...)
+function AztecGambling:RollCallback(...)
 	if (self.game.data == nil) then return end
 
 	-- Parse the input Args 
@@ -829,12 +829,12 @@ function CalmDownandGamble:RollCallback(...)
 
 			if (new_total > 21) then
 				self.game.data.blackjack_active[player] = false
-				self:MessageChat(player.." drew a "..roll.." for "..new_total.." - BUST!")
+				self:MessageChat(AG_MESSAGES.HIT_DRAW_BUST(player, roll, new_total))
 			elseif (new_total == 21) then
 				self.game.data.blackjack_active[player] = false
-				self:MessageChat(player.." drew a "..roll.." for 21 - BLACKJACK!")
+				self:MessageChat(AG_MESSAGES.HIT_DRAW_BLACKJACK(player, roll))
 			else
-				self:MessageChat(player.." drew a "..roll.." for "..new_total..". Hit or stand?")
+				self:MessageChat(AG_MESSAGES.HIT_DRAW_CONTINUE(player, roll, new_total))
 			end
 
 			self:UpdateRollStatusUI()
@@ -853,7 +853,7 @@ function CalmDownandGamble:RollCallback(...)
 			self:PrintDebug("Player: "..player.." Roll: "..roll.." RollRange: "..roll_range)
 
 			-- Update Game State Data 
-			-- TODO: Only in NONGROUP channels if channel == "CDG_ROLL_DICE" then SendSystemMessage(roll_text) end
+			-- TODO: Only in NONGROUP channels if channel == "AG_ROLL_DICE" then SendSystemMessage(roll_text) end
 			self.game.data.player_rolls[player] = tonumber(roll)
 
 			-- Update the UI and Check for the game end 
@@ -864,7 +864,7 @@ function CalmDownandGamble:RollCallback(...)
 	
 end
 
-function CalmDownandGamble:ChatChannelCallback(...)
+function AztecGambling:ChatChannelCallback(...)
 	if (self.game.data == nil) then return end
 
 	local message = select(2, ...)
@@ -879,13 +879,13 @@ function CalmDownandGamble:ChatChannelCallback(...)
 
 		if (choice == "hit") then
 			self.game.data.awaiting_hit[sender] = true
-			self:MessageChat(sender.." hits! Command:   /roll "..self.game.data.roll_range)
-			self:MessageAddon("CDG_TURN_UPDATE", sender.." "..self.game.data.roll_lower.." "..self.game.data.roll_upper)
+			self:MessageChat(AG_MESSAGES.HITS(sender, self.game.data.roll_range))
+			self:MessageAddon("AG_TURN_UPDATE", sender.." "..self.game.data.roll_lower.." "..self.game.data.roll_upper)
 			return
 		elseif (choice == "stand") then
 			self.game.data.blackjack_active[sender] = false
 			self.game.data.awaiting_hit[sender] = nil
-			self:MessageChat(sender.." stands with "..self.game.data.player_rolls[sender].."!")
+			self:MessageChat(AG_MESSAGES.STANDS(sender, self.game.data.player_rolls[sender]))
 			self:UpdateRollStatusUI()
 			self:CheckBlackjackHandsComplete()
 			return
@@ -913,54 +913,52 @@ end
 
 -- Button Interaction Callbacks (State and Settings)
 -- ==================================================== 
-function CalmDownandGamble:PrintBanlist()
-	self:MessageChat("Hall of GTFO:")
+function AztecGambling:PrintBanlist()
+	self:MessageChat(AG_MESSAGES.HALL_OF_GTFO)
 	for player, _ in pairs(self.db.global.ban_list) do
 		self:MessageChat(player)
     end
 end
 
-function CalmDownandGamble:PrintRanklist()
+function AztecGambling:PrintRanklist()
 
-	self:MessageChat("Hall of Fame: ")
+	self:MessageChat(AG_MESSAGES.HALL_OF_FAME)
 	local index = 1
 	local sort_descending = function(t,a,b) return t[b] < t[a] end
 	for player, gold in self:sortedpairs(self.db.global.rankings, sort_descending) do
 		if gold <= 0 then break end
-		
-		local msg = string.format("%d. %s won %d gold.", index, player, gold)
-		self:MessageChat(msg)
+
+		self:MessageChat(AG_MESSAGES.RANK_WON(index, player, gold))
 		index = index + 1
 	end
-	
-	self:MessageChat("~~~~~~")
-	
-	self:MessageChat("Hall of Shame: ")
+
+	self:MessageChat(AG_MESSAGES.RANK_SEPARATOR)
+
+	self:MessageChat(AG_MESSAGES.HALL_OF_SHAME)
 	index = 1
 	local sort_ascending = function(t,a,b) return t[b] > t[a] end
 	for player, gold in self:sortedpairs(self.db.global.rankings, sort_ascending) do
 		if gold >= 0 then break end
-	
-		local msg = string.format("%d. %s lost %d gold.", index, player, math.abs(gold))
-		self:MessageChat(msg)
+
+		self:MessageChat(AG_MESSAGES.RANK_LOST(index, player, gold))
 		index = index + 1
 	end
-	
+
 end
 
-function CalmDownandGamble:RollForMe()
-	if self.game.data == nil then 
-		SendSystemMessage("You need an active game for me to roll for you!")
+function AztecGambling:RollForMe()
+	if self.game.data == nil then
+		SendSystemMessage(AG_MESSAGES.NO_ACTIVE_GAME_TO_ROLL)
 		return
 	end
 	RandomRoll(self.game.data.roll_lower, self.game.data.roll_upper)
 end
 
-function CalmDownandGamble:EnterForMe()
-	self:MessageChat("1")
+function AztecGambling:EnterForMe()
+	self:MessageChat(AG_MESSAGES.JOIN_SIGNAL)
 end
 
-function CalmDownandGamble:TimedStart() 
+function AztecGambling:TimedStart() 
 	if (self.game.data ~= nil) then
 		if not self.game.data.accepting_rolls then 
 			self.game.stage_id = 4 -- 4 is the final stage
@@ -970,32 +968,32 @@ function CalmDownandGamble:TimedStart()
 	end
 end
 
--- NEEDS TO BE COMMON WITH CDGCLIENT! TODO!
-function CalmDownandGamble:OpenTradeWinner()
+-- NEEDS TO BE COMMON WITH AGCLIENT! TODO!
+function AztecGambling:OpenTradeWinner()
 	InitiateTrade(self.game.data.winner)
 end
 
 -- UI ELEMENTS 
 -- ======================================================
-function CalmDownandGamble:ShowUI()
-	self.ui.CDG_Frame:Show()
+function AztecGambling:ShowUI()
+	self.ui.AG_Frame:Show()
 	self.db.global.window_shown = true
 end
 
-function CalmDownandGamble:HideUI()
-	self.ui.CDG_Frame:Hide()
+function AztecGambling:HideUI()
+	self.ui.AG_Frame:Hide()
 	self.db.global.window_shown = false
 	self:SaveFrameState()
 end
 
-function CalmDownandGamble:SaveFrameState()
-	self.db.global.ui_frame = self:CopyTable(self.ui.CDG_Frame.status)
+function AztecGambling:SaveFrameState()
+	self.db.global.ui_frame = self:CopyTable(self.ui.AG_Frame.status)
 end
 
-function CalmDownandGamble:ConstructUI()
+function AztecGambling:ConstructUI()
 
 	-- Settings to be used --
-	local cdg_ui_elements = {
+	local ag_ui_elements = {
 		-- Main Box Frame --
 		main_frame = {
 			width = 400,
@@ -1035,7 +1033,7 @@ function CalmDownandGamble:ConstructUI()
 				label = "Roll!",
 				click_callback = function() self:RollForMe() end
 			},
-			-- TODO : Make this common with CDGClient
+			-- TODO : Make this common with AGClient
 			open_trade = {
 				width = 100,
 				label = "Trade",
@@ -1058,16 +1056,16 @@ function CalmDownandGamble:ConstructUI()
 	-- ui - represents the Top level of the storage hierarchy for the UI
 	self.ui = {}
 	
-	-- CDG_Frame - Represents the window frame of the addon
-	self.ui.CDG_Frame = AceGUI:Create("Frame")
-	self.ui.CDG_Frame:SetTitle("Aztec Gambling")
-	self.ui.CDG_Frame:SetStatusText("")
-	self.ui.CDG_Frame:SetLayout("Flow")
-	self.ui.CDG_Frame:SetStatusTable(cdg_ui_elements.main_frame)
-	self.ui.CDG_Frame:EnableResize(false)
-	self.ui.CDG_Frame:SetCallback("OnClose", function() self:HideUI() end)
-	self.ui.CDG_Frame.frame:EnableMouse(true)
-	self.ui.CDG_Frame.frame:SetUserPlaced(true)
+	-- AG_Frame - Represents the window frame of the addon
+	self.ui.AG_Frame = AceGUI:Create("Frame")
+	self.ui.AG_Frame:SetTitle("Aztec Gambling")
+	self.ui.AG_Frame:SetStatusText("")
+	self.ui.AG_Frame:SetLayout("Flow")
+	self.ui.AG_Frame:SetStatusTable(ag_ui_elements.main_frame)
+	self.ui.AG_Frame:EnableResize(false)
+	self.ui.AG_Frame:SetCallback("OnClose", function() self:HideUI() end)
+	self.ui.AG_Frame.frame:EnableMouse(true)
+	self.ui.AG_Frame.frame:SetUserPlaced(true)
 
 	-- Mouse callbacks 
 	on_mouse_down = function(w, button) 
@@ -1075,7 +1073,7 @@ function CalmDownandGamble:ConstructUI()
 			self:ToggleCasino() 
 		end 
 	end
-	self.ui.CDG_Frame.frame:SetScript("OnMouseDown", on_mouse_down)
+	self.ui.AG_Frame.frame:SetScript("OnMouseDown", on_mouse_down)
 	
 	-- BuildRow - Creates one centered row of controls using the "Table" layout.
 	-- A {weight=1, alignH="fill"} spacer column on each side of the fixed-width
@@ -1090,7 +1088,7 @@ function CalmDownandGamble:ConstructUI()
 
 		local columns = { {weight = 1, alignH = "fill"} }
 		for _, name in ipairs(control_names) do
-			table.insert(columns, cdg_ui_elements.buttons[name].width)
+			table.insert(columns, ag_ui_elements.buttons[name].width)
 		end
 		table.insert(columns, {weight = 1, alignH = "fill"})
 		row:SetUserData("table", { columns = columns, space = 4 })
@@ -1100,7 +1098,7 @@ function CalmDownandGamble:ConstructUI()
 		row:AddChild(left_spacer)
 
 		for _, name in ipairs(control_names) do
-			local control_settings = cdg_ui_elements.buttons[name]
+			local control_settings = ag_ui_elements.buttons[name]
 
 			if (name == "gold_amount_entry") then
 				-- gold_amount_entry - Text box for gold entry
@@ -1139,42 +1137,42 @@ function CalmDownandGamble:ConstructUI()
 	end
 
 	-- Row 1: Enter, Roll!, Payout
-	self.ui.CDG_PlayFrame = BuildRow(cdg_ui_elements.row1_index, cdg_ui_elements.main_frame.width)
-	self.ui.CDG_Frame:AddChild(self.ui.CDG_PlayFrame)
+	self.ui.AG_PlayFrame = BuildRow(ag_ui_elements.row1_index, ag_ui_elements.main_frame.width)
+	self.ui.AG_Frame:AddChild(self.ui.AG_PlayFrame)
 
-	-- CDG_CasinoGroup - Bordered, titled "Casino" box wrapping rows 2 and 3
+	-- AG_CasinoGroup - Bordered, titled "Casino" box wrapping rows 2 and 3
 	-- ====================================================
-	self.ui.CDG_CasinoGroup = AceGUI:Create("InlineGroup")
-	self.ui.CDG_CasinoGroup:SetTitle("Casino")
-	self.ui.CDG_CasinoGroup:SetLayout("Flow")
-	self.ui.CDG_CasinoGroup:SetWidth(cdg_ui_elements.main_frame.width)
+	self.ui.AG_CasinoGroup = AceGUI:Create("InlineGroup")
+	self.ui.AG_CasinoGroup:SetTitle("Casino")
+	self.ui.AG_CasinoGroup:SetLayout("Flow")
+	self.ui.AG_CasinoGroup:SetWidth(ag_ui_elements.main_frame.width)
 
 	-- InlineGroup insets its content by 20px (10px on each side) - rows inside
 	-- it need to be built to that narrower width, not the full frame width
-	local casino_row_width = cdg_ui_elements.main_frame.width - 20
+	local casino_row_width = ag_ui_elements.main_frame.width - 20
 
 	-- Row 2: chat channel, gold entry, game mode, new game, reset
-	self.ui.CDG_CasinoFrame = BuildRow(cdg_ui_elements.row2_index, casino_row_width)
-	self.ui.CDG_CasinoGroup:AddChild(self.ui.CDG_CasinoFrame)
+	self.ui.AG_CasinoFrame = BuildRow(ag_ui_elements.row2_index, casino_row_width)
+	self.ui.AG_CasinoGroup:AddChild(self.ui.AG_CasinoFrame)
 
 	-- Row 3: PAY!
-	self.ui.CDG_ModeFrame = BuildRow(cdg_ui_elements.row3_index, casino_row_width)
-	self.ui.CDG_CasinoGroup:AddChild(self.ui.CDG_ModeFrame)
+	self.ui.AG_ModeFrame = BuildRow(ag_ui_elements.row3_index, casino_row_width)
+	self.ui.AG_CasinoGroup:AddChild(self.ui.AG_ModeFrame)
 
-	self.ui.CDG_Frame:AddChild(self.ui.CDG_CasinoGroup)
+	self.ui.AG_Frame:AddChild(self.ui.AG_CasinoGroup)
 
 
 	
 	if (self.db.global.ui_frame ~= nil) then
 		-- Restore the saved position, but always keep the width/height defined above -
 		-- otherwise a size saved by an older layout (fewer rows) keeps overriding it forever
-		self.ui.CDG_Frame:SetStatusTable(self.db.global.ui_frame)
-		self.ui.CDG_Frame:SetWidth(cdg_ui_elements.main_frame.width)
-		self.ui.CDG_Frame:SetHeight(cdg_ui_elements.main_frame.height)
+		self.ui.AG_Frame:SetStatusTable(self.db.global.ui_frame)
+		self.ui.AG_Frame:SetWidth(ag_ui_elements.main_frame.width)
+		self.ui.AG_Frame:SetHeight(ag_ui_elements.main_frame.height)
 	end
 	
 	if not self.db.global.window_shown then
-		self.ui.CDG_Frame:Hide()
+		self.ui.AG_Frame:Hide()
 	end
 	
 	-- Register for UI Events

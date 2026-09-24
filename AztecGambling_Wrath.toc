@@ -1,11 +1,11 @@
-## Interface: 120100
-## Title: CalmDownandGamble
-## Author: Fuzz Magtheridon-US (Mal'Ganis-US)
-## Version: 10.0.2
+## Interface: 30402
+## Title: Aztec Gambling
+## Author: Fuzz Magtheridon-US (Mal'Ganis-US) 
+## Version: 10.0.0
 ## Notes: CALM DOWN AND GAMBLE!
 ## DefaultState: Enabled
 ## LoadOnDemand: 0
-## SavedVariables: CalmDownandGambleDB, CDGClientDB
+## SavedVariables: AztecGamblingDB, AGClientDB
 ## OptionalDeps: Ace3, LibDBIcon-1.0
 
 libs\Ace3\LibStub\LibStub.lua
@@ -28,8 +28,9 @@ libs\Ace3\AceSerializer-3.0\AceSerializer-3.0.xml
 libs\LibDBIcon-1.0\embeds.xml
 libs\LibDBIcon-1.0\LibDBIcon-1.0\lib.xml
 
-CalmDownandGamble.lua
-CDGUtils.lua
-CDGGameModes.lua
-CDGClient.lua
-CDGCommon.lua
+AGMessages.lua
+AztecGambling.lua
+AGUtils.lua
+AGGameModes.lua
+AGClient.lua
+AGCommon.lua

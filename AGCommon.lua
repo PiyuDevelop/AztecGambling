@@ -3,30 +3,30 @@
 -- Global 3 way UI Toggler 
 -- ==========================
 local ToggleClientAndCasino = function() 
-    if (CDGClient.db.global.window_shown) then
-        CDGClient:ToggleClient()
-    elseif (CalmDownandGamble.db.global.window_shown) then
-        CalmDownandGamble:HideUI()
+    if (AGClient.db.global.window_shown) then
+        AGClient:ToggleClient()
+    elseif (AztecGambling.db.global.window_shown) then
+        AztecGambling:HideUI()
     else
-        CDGClient:ShowUI()
+        AGClient:ShowUI()
     end
 end
 
-function CalmDownandGamble:ToggleCasino() 
-    CalmDownandGamble:HideUI()
-    CDGClient:ShowUI()
+function AztecGambling:ToggleCasino() 
+    AztecGambling:HideUI()
+    AGClient:ShowUI()
 end
 
-function CDGClient:ToggleClient() 
-    CDGClient:HideUI()
-    CalmDownandGamble:ShowUI()
+function AGClient:ToggleClient() 
+    AGClient:HideUI()
+    AztecGambling:ShowUI()
 end
 
 -- MiniMap Icon Definition
 -- =========================
-function CalmDownandGamble:ConstructMiniMapIcon() 
+function AztecGambling:ConstructMiniMapIcon() 
 	self.minimap = { }
-	self.minimap.icon_data = LibStub("LibDataBroker-1.1"):NewDataObject("CalmDownandGambleIcon", {
+	self.minimap.icon_data = LibStub("LibDataBroker-1.1"):NewDataObject("AztecGamblingIcon", {
 		type = "data source",
 		text = "Aztec Gambling!",
 		icon = "Interface\\Icons\\INV_Misc_Coin_02",
@@ -39,18 +39,18 @@ function CalmDownandGamble:ConstructMiniMapIcon()
 	})
 
 	self.minimap.icon = LibStub("LibDBIcon-1.0")
-	self.minimap.icon:Register("CalmDownandGambleIcon", self.minimap.icon_data, self.db.global.minimap)
+	self.minimap.icon:Register("AztecGamblingIcon", self.minimap.icon_data, self.db.global.minimap)
 end
 
 -- Debug Setup
 -- ==================
-function CalmDownandGamble:PrintDebug(msg)
-	if self.DEBUG_ENABLED then self:Print("[CDG_DEBUG] "..msg) end
+function AztecGambling:PrintDebug(msg)
+	if self.DEBUG_ENABLED then self:Print("[AG_DEBUG] "..msg) end
 end
 
 -- Custom Channel Handling
 -- ==========================
-function CalmDownandGamble:GetCustomChannelName() 
+function AztecGambling:GetCustomChannelName() 
     -- Figure out the Channel Name
     guildName, guildRankName, guildRankIndex = GetGuildInfo("player")
     guildName = string.gsub(guildName, "%s+", "")
@@ -58,7 +58,7 @@ function CalmDownandGamble:GetCustomChannelName()
     return channel_name
 end
 
-function CalmDownandGamble:JoinCustomChannel(channel_name) 
+function AztecGambling:JoinCustomChannel(channel_name) 
     -- Only if we're not only in a channel 
     if (self.db.global.custom_channel.index) then return end
     if (channel_name == nil) then channel_name = self:GetCustomChannelName() end
@@ -75,19 +75,19 @@ function CalmDownandGamble:JoinCustomChannel(channel_name)
 	self:RegisterEvent("PLAYER_LEAVING_WORLD", "LeaveCustomChannel")
 end
 
-function CalmDownandGamble:LeaveCustomChannel() 
+function AztecGambling:LeaveCustomChannel() 
     LeaveChannelByName(self.db.global.custom_channel.name)
     self.db.global.custom_channel.index = nil
     self.db.global.custom_channel.name = ""
 end
 
-function CalmDownandGamble:PrintSlashCommandHelp()
-    self:Print("CalmDown and Gamble Slash Commands: ")
-    self:Print(" /cdg <command> ")
+function AztecGambling:PrintSlashCommandHelp()
+    self:Print("Aztec Gambling Slash Commands: ")
+    self:Print(" /azg <command> ")
     self:Print("    <no command>  - Toggles UI like the minimap button does")
     self:Print("    auto - Toggles auto pop up of rolling UI")
     self:Print("    stats - Prints the hall of fame and shame")
-    self:Print("    ban <player> - Bans player from entering CDG")
+    self:Print("    ban <player> - Bans player from entering AG")
     self:Print("    unban <player> - Unbans player")
     self:Print("    resetStats - Clears hall of fame/shame")
     self:Print("    resetBans - Clears all bans ")
@@ -99,7 +99,7 @@ end
 -- ================
 
 -- Handler Needed to support multiargument commands 
-function CalmDownandGamble:SlashCommandHandler(...)
+function AztecGambling:SlashCommandHandler(...)
     command_args = self:SplitString(select(1, ...), "%S+")
     command = command_args[1]
 
@@ -124,8 +124,8 @@ function CalmDownandGamble:SlashCommandHandler(...)
         self:PrintRanklist()
 
     elseif (command == "auto") then 
-        CDGClient.db.global.auto_pop = not CDGClient.db.global.auto_pop
-        if CDGClient.db.global.auto_pop then 
+        AGClient.db.global.auto_pop = not AGClient.db.global.auto_pop
+        if AGClient.db.global.auto_pop then 
             self:Print("Enabled auto show of rolling UI.")
         else
             self:Print("Disabled auto show of rolling UI.")
@@ -145,17 +145,17 @@ function CalmDownandGamble:SlashCommandHandler(...)
         self:PrintSlashCommandHelp()
 
     else 
-        self:Print("Unrecognized CDG Slash Command: ")
+        self:Print("Unrecognized AG Slash Command: ")
         self:Print(command)
-        self:Print("Use /cdg help for more information.")
+        self:Print("Use /azg help for more information.")
 
     end
 end
 
 -- Called from constructor of main addon
-function CalmDownandGamble:RegisterSlashCommands() 
-	self:RegisterChatCommand("cdg", "SlashCommandHandler")
+function AztecGambling:RegisterSlashCommands() 
+	self:RegisterChatCommand("azg", "SlashCommandHandler")
 
     -- Legacy Support - TODO: Remove
-	self:RegisterChatCommand("cdgm", "ShowUI")
+	self:RegisterChatCommand("azgm", "ShowUI")
 end

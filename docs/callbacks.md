@@ -10,7 +10,7 @@
 
 
 ## TextBox 
-  OnEnterPressed(text) -- Set the CDG Value for the Currency Amount
+  OnEnterPressed(text) -- Set the AG Value for the Currency Amount
 
 
 ## Buttons

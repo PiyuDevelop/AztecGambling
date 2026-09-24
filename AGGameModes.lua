@@ -1,18 +1,18 @@
 
 -- Consts for Sorting, shortcuts for common cases
-local CDG_SORT_DESCENDING = function(scores, playera, playerb) return scores[playerb] < scores[playera] end
-local CDG_SORT_ASCENDING  = function(scores, playera, playerb) return scores[playerb] > scores[playera] end
-local CDG_MAX_ROLL = function(roll) return (tonumber(roll) > 1000000) and 1000000 or tonumber(roll) end
+local AG_SORT_DESCENDING = function(scores, playera, playerb) return scores[playerb] < scores[playera] end
+local AG_SORT_ASCENDING  = function(scores, playera, playerb) return scores[playerb] > scores[playera] end
+local AG_MAX_ROLL = function(roll) return (tonumber(roll) > 1000000) and 1000000 or tonumber(roll) end
 
 -- High/Low 
 -- ==================
-CDG_HILO = {
+AG_HILO = {
 	-- String for game name
 	label = "HiLo",
 	
 	init_game = function(game)
 		game.data.roll_lower = 1
-		game.data.roll_upper = CDG_MAX_ROLL(game.data.gold_amount)
+		game.data.roll_upper = AG_MAX_ROLL(game.data.gold_amount)
 		game.data.roll_range = "(1-"..game.data.roll_upper..")"
 	end,
 	
@@ -22,7 +22,7 @@ CDG_HILO = {
 	
 	fmt_score = function(roll) return roll end,
 
-	sort_rolls = CDG_SORT_DESCENDING,
+	sort_rolls = AG_SORT_DESCENDING,
 	
 	payout = function(game)
 		game.data.cash_winnings = game.data.winning_roll - game.data.losing_roll
@@ -31,13 +31,13 @@ CDG_HILO = {
 
 -- Mystery
 -- ==============
-CDG_MYSTERY = {
+AG_MYSTERY = {
 	-- String for game name
 	label = "HiLo",
 	
 	init_game = function(game)
 		game.data.roll_lower = 1
-		game.data.roll_upper = CDG_MAX_ROLL(game.data.gold_amount)
+		game.data.roll_upper = AG_MAX_ROLL(game.data.gold_amount)
 		game.data.roll_range = "(1-"..game.data.roll_upper..")"
 	end,
 	
@@ -47,7 +47,7 @@ CDG_MYSTERY = {
 	
 	fmt_score = function(roll) return roll end,
 
-	sort_rolls = CDG_SORT_DESCENDING,
+	sort_rolls = AG_SORT_DESCENDING,
 	
 	payout = function(game)
 		game.data.cash_winnings = game.data.winning_roll - game.data.losing_roll
@@ -56,7 +56,7 @@ CDG_MYSTERY = {
 
 -- BigTwos 
 -- ==============
-CDG_BIGTWOS = {
+AG_BIGTWOS = {
 	label = "Big2s",
 	
 	init_game = function(game)
@@ -71,7 +71,7 @@ CDG_BIGTWOS = {
 	
 	fmt_score = function(roll) return roll end,
 	
-	sort_rolls = CDG_SORT_DESCENDING,
+	sort_rolls = AG_SORT_DESCENDING,
 	
 	payout = function(game)
 		game.data.cash_winnings = game.data.gold_amount
@@ -81,7 +81,7 @@ CDG_BIGTWOS = {
 
 -- LILONES
 -- ==============
-CDG_LILONES = {
+AG_LILONES = {
 	label = "LilOnes",
 	
 	init_game = function(game)
@@ -96,7 +96,7 @@ CDG_LILONES = {
 	
 	fmt_score = function(roll) return roll end,
 	
-	sort_rolls = CDG_SORT_ASCENDING,
+	sort_rolls = AG_SORT_ASCENDING,
 	
 	payout = function(game)
 		game.data.cash_winnings = game.data.gold_amount
@@ -106,12 +106,12 @@ CDG_LILONES = {
 
 -- Inverse
 -- ===========
-CDG_INVERSE = {
+AG_INVERSE = {
 	label = "Inverse",
 	
 	init_game = function(game)
 		game.data.roll_lower = 1
-		game.data.roll_upper = CDG_MAX_ROLL(game.data.gold_amount)
+		game.data.roll_upper = AG_MAX_ROLL(game.data.gold_amount)
 		game.data.roll_range = "(1-"..game.data.roll_upper..")"
 	end,
 	
@@ -121,7 +121,7 @@ CDG_INVERSE = {
 	
 	fmt_score = function(roll) return roll end,
 	
-	sort_rolls = CDG_SORT_ASCENDING,
+	sort_rolls = AG_SORT_ASCENDING,
 	
 	payout = function(game)
 		game.data.cash_winnings = game.data.losing_roll - game.data.winning_roll
@@ -131,7 +131,7 @@ CDG_INVERSE = {
 
 -- Russian Roullette
 -- ===================
-CDG_ROULETTE= {
+AG_ROULETTE= {
 	label = "Roulette",
 	
 	init_game = function(game)
@@ -150,7 +150,7 @@ CDG_ROULETTE= {
 	
 	fmt_score = function(roll) return roll end,
 	
-	sort_rolls = CDG_SORT_DESCENDING,
+	sort_rolls = AG_SORT_DESCENDING,
 	
 	payout = function(game)
 		game.data.cash_winnings = game.data.gold_amount
@@ -254,7 +254,7 @@ local function FormatYahtzee(roll)
 end
 
 
-CDG_YAHTZEE = {
+AG_YAHTZEE = {
 	label = "Yahtzee",
 	
 	init_game = function(game)
@@ -281,49 +281,49 @@ CDG_YAHTZEE = {
 	end,
 	
 	payout = function(game)
-		for player, roll in CalmDownandGamble:sortedpairs(game.data.player_rolls, game.mode.sort_rolls) do
+		for player, roll in AztecGambling:sortedpairs(game.data.player_rolls, game.mode.sort_rolls) do
 			local hand, score = ScoreYahtzee(roll)
-			CalmDownandGamble:MessageChat(player.." Roll: "..FormatYahtzee(roll).." Score: "..score.." - "..hand)
+			AztecGambling:MessageChat(AG_MESSAGES.YAHTZEE_ROLL(player, FormatYahtzee(roll), score, hand))
 		end
 		game.data.cash_winnings = game.data.gold_amount
 	end,
 
 }
 
-CDG_CURLING = {
+AG_CURLING = {
 	label = "Curling",
 	target_roll = 0,
 	
 	init_game = function(game)
 		game.data.roll_lower = 1
-		game.data.roll_upper = CDG_MAX_ROLL(game.data.gold_amount) 
+		game.data.roll_upper = AG_MAX_ROLL(game.data.gold_amount) 
 		game.data.roll_range = "(1-"..game.data.roll_upper..")"
 		game.target_roll = math.random(game.data.roll_upper)
-		CDG_CURLING.game = game
+		AG_CURLING.game = game
 	end,
 
 	custom_intro = function()
-		return "Roll from 1-"..CDG_CURLING.game.data.gold_amount.." to try and hit "..CDG_CURLING.game.target_roll.."!"
+		return AG_MESSAGES.CURLING_INTRO(AG_CURLING.game.data.gold_amount, AG_CURLING.game.target_roll)
 	end,
 			
 	roll_to_score = function(roll)
-		return math.abs(CDG_CURLING.game.target_roll - tonumber(roll))
+		return math.abs(AG_CURLING.game.target_roll - tonumber(roll))
 	end,
 	
 	fmt_score = function(roll) return roll end,
 	
 	sort_rolls =  function(scores, playera, playerb) 
-		local scoreA = CDG_CURLING.roll_to_score(scores[playera])
-		local scoreB = CDG_CURLING.roll_to_score(scores[playerb])
+		local scoreA = AG_CURLING.roll_to_score(scores[playera])
+		local scoreB = AG_CURLING.roll_to_score(scores[playerb])
 		-- Sort from Highest to Lowest
 		return scoreB > scoreA
 	end,
 	
 	payout = function(game)
 		losing_roll = game.data.player_rolls[game.data.loser]
-		game.data.cash_winnings = math.abs(CDG_CURLING.game.target_roll - losing_roll)
-		CalmDownandGamble:MessageChat("Bullseye for Curling was: "..CDG_CURLING.game.target_roll)
-		CalmDownandGamble:MessageChat(game.data.loser.." was "..game.data.cash_winnings.." away from the bullseye!")
+		game.data.cash_winnings = math.abs(AG_CURLING.game.target_roll - losing_roll)
+		AztecGambling:MessageChat(AG_MESSAGES.CURLING_BULLSEYE(AG_CURLING.game.target_roll))
+		AztecGambling:MessageChat(AG_MESSAGES.CURLING_AWAY(game.data.loser, game.data.cash_winnings))
 	end,
 }
 
@@ -331,19 +331,19 @@ CDG_CURLING = {
 -- ==========================
 -- Two players roll from the bet amount downward - each roll becomes the
 -- upper bound for the next roll - whoever rolls a 1 loses the bet.
-CDG_COUNTDOWN = {
+AG_COUNTDOWN = {
 	label = "Countdown",
 	turn_based = true,
 	max_players = 2,
 
 	init_game = function(game)
 		game.data.roll_lower = 1
-		game.data.roll_upper = CDG_MAX_ROLL(game.data.gold_amount)
+		game.data.roll_upper = AG_MAX_ROLL(game.data.gold_amount)
 		game.data.roll_range = "(1-"..game.data.roll_upper..")"
 	end,
 
 	custom_intro = function()
-		return "1v1 Roll War! Each roll sets the ceiling for the next one - whoever rolls a 1 loses the bet!"
+		return AG_MESSAGES.COUNTDOWN_INTRO
 	end,
 
 	fmt_score = function(roll) return roll end,
@@ -378,10 +378,10 @@ local function FormatBlackjack(roll)
 	end
 end
 
-CDG_BLACKJACK = {
+AG_BLACKJACK = {
 	label = "Blackjack",
 
-	-- Enables the hit-or-stand flow in CalmDownandGamble.lua: after the deal,
+	-- Enables the hit-or-stand flow in AztecGambling.lua: after the deal,
 	-- players can chat "hit" to draw again (roll hit_range) or "stand" to lock
 	-- in their total, instead of being stuck with a single roll.
 	hit_stand = true,
@@ -396,7 +396,7 @@ CDG_BLACKJACK = {
 	end,
 
 	custom_intro = function()
-		return "Roll your starting hand! Then type 'hit' to draw another card (1-10) or 'stand' to lock in your total. Get as close to 21 as possible without busting!"
+		return AG_MESSAGES.BLACKJACK_INTRO
 	end,
 
 	roll_to_score = function(roll)
