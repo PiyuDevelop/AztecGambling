@@ -1,6 +1,6 @@
 ## Interface: 120100
 ## Title: Aztec Gambling
-## Author: Jayred-Tichondrius
+## Author: Jayred-Tichondrius (US)
 ## Version: 10.0.2
 ## Notes: AZTEC GAMBLING!
 ## DefaultState: Enabled
