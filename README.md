@@ -91,3 +91,7 @@ Aztec Gambling is based on [Calm Down and Gamble](https://github.com/manistal/ca
 - [ejwagner713](https://github.com/ejwagner713) — Contributor.
 - **Spikedude** — Beta Tester.
 - **[Calm Down] US-Magtheridon** — a raiding guild with a gambling problem, and the guild that made this necessary.
+
+## License
+
+Aztec Gambling is distributed under the [MIT License](LICENSE), the same license Calm Down and Gamble is published under on CurseForge. The bundled libraries in `libs/` (Ace3, LibDBIcon-1.0) belong to their respective authors and keep their own licenses.
