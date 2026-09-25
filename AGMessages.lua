@@ -32,8 +32,8 @@ AG_MESSAGES = {
 	ROLL_OFF_TIE = "Tie! Roll again to see who goes first.",
 
 	-- Rolling
-	ROLL_GOODLUCK = function(roll_range)
-		return "Time to roll! Good Luck! Command:   /roll "..roll_range
+	ROLL_GOODLUCK = function(roll_range, seconds)
+		return "Time to roll! You have "..seconds.." seconds. Good Luck! Command:   /roll "..roll_range
 	end,
 	TIME_LEFT = function(seconds_left)
 		return "Time left to roll: "..seconds_left.." seconds"
@@ -44,6 +44,27 @@ AG_MESSAGES = {
 	PLAYER_NEEDS_ROLL = function(player)
 		return "Player: "..player.." still needs to roll"
 	end,
+
+	-- Roll time limit (players is a list of names)
+	ROLL_TIME_WARNING = function(seconds_left, players)
+		return seconds_left.." seconds left! Still waiting on: "..table.concat(players, ", ")
+	end,
+	TIMEOUT_REMOVED = function(players)
+		return "Time's up! Removed for not rolling: "..table.concat(players, ", ")
+	end,
+	TIMEOUT_GAVE_UP_WIN = function(players)
+		return "Time's up! Gave up the win for not rolling: "..table.concat(players, ", ")
+	end,
+	TIMEOUT_TIED_LAST = function(players)
+		return "Time's up! Tied for last for not rolling: "..table.concat(players, ", ")
+	end,
+	TIMEOUT_LOSES = function(player)
+		return "Time's up! "..player.." didn't roll and loses the round."
+	end,
+	TIMEOUT_AUTO_STAND = function(players)
+		return "Time's up! Standing automatically: "..table.concat(players, ", ")
+	end,
+	TIMEOUT_CANCELLED = "Time's up! Not enough players rolled. Round cancelled.",
 
 	-- Countdown (1v1 roll war)
 	COUNTDOWN_NEEDS_PLAYERS = function(required)

@@ -9,7 +9,11 @@ local AG_MAX_ROLL = function(roll) return (tonumber(roll) > 1000000) and 1000000
 AG_HILO = {
 	-- String for game name
 	label = "HiLo",
-	
+
+	-- When everyone ties, the tiebreaker plays like a normal round with fewer
+	-- players: whoever doesn't roll in time is removed instead of losing
+	everyone_tied_removes = true,
+
 	init_game = function(game)
 		game.data.roll_lower = 1
 		game.data.roll_upper = AG_MAX_ROLL(game.data.gold_amount)
@@ -108,7 +112,8 @@ AG_LILONES = {
 -- ===========
 AG_INVERSE = {
 	label = "Inverse",
-	
+	everyone_tied_removes = true, -- see AG_HILO
+
 	init_game = function(game)
 		game.data.roll_lower = 1
 		game.data.roll_upper = AG_MAX_ROLL(game.data.gold_amount)
@@ -320,8 +325,9 @@ AG_CURLING = {
 	end,
 	
 	payout = function(game)
-		losing_roll = game.data.player_rolls[game.data.loser]
-		game.data.cash_winnings = math.abs(AG_CURLING.game.target_roll - losing_roll)
+		-- losing_roll is already the loser's distance from the target (see roll_to_score).
+		-- Their entry in player_rolls can be gone or -1 after a tiebreaker or a roll timeout
+		game.data.cash_winnings = game.data.losing_roll
 		AztecGambling:MessageChat(AG_MESSAGES.CURLING_BULLSEYE(AG_CURLING.game.target_roll))
 		AztecGambling:MessageChat(AG_MESSAGES.CURLING_AWAY(game.data.loser, game.data.cash_winnings))
 	end,

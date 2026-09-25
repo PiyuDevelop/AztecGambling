@@ -21,9 +21,22 @@ Only the host needs the addon installed — anyone else can join by typing `1` i
 1. **Host** picks a chat channel, a game mode, and a gold amount, then presses **Start!** to open entries.
 2. **Players** join by pressing **Enter** in the companion window (or typing `1` in the chosen chat channel).
 3. The host presses **Start!** again to close entries and begin accepting rolls — every player rolls the range shown in chat (or clicks **Roll!**/uses **Roll for Me**).
-   - Players have **1 minute** to roll. Pressing **Status** posts in chat who still needs to roll and how many seconds are left. Nothing happens automatically when time runs out — the host decides whether to keep waiting or **Reset** the round.
+   - Players have **1 minute** to roll, and the addon warns in chat who is still missing when 10 seconds are left. Pressing **Status** also posts who still needs to roll and how many seconds are left. See [Roll Time Limit](#roll-time-limit) for what happens when time runs out.
 4. Once everyone has rolled, the addon scores the round, resolves ties automatically with a reroll among the tied players, and announces the result: `<loser> owes <winner> <amount> gold!`
 5. Settle up in-game (currently manual — see [Known Issues](#known-issues)), then press **Start!** again for a new round, or **Reset** to cancel the current one.
+
+### Roll Time Limit
+
+Every roll phase gets 60 seconds: the round, each tiebreaker, each Countdown roll, and the Blackjack hit/stand phase. When time runs out, a player who didn't roll:
+
+| Situation | What happens |
+|---|---|
+| Normal round (and the Blackjack deal) | Removed from the round. If fewer than 2 players rolled, the round is cancelled. |
+| Losers' tiebreaker | Loses the round. If more than one player didn't roll, they go to a new losers' tiebreaker among themselves. |
+| Winners' tiebreaker | Gives up the win. If only one player rolled, they win; if nobody rolled, the round is cancelled. |
+| Everyone tied | Gives up the win and loses the round, as in a losers' tiebreaker. If nobody rolled, the round is cancelled. In **HiLo** and **Inverse**, the tiebreaker works like a normal round with fewer players instead: whoever didn't roll is removed. |
+| Countdown (roll-off and turns) | Loses the round. If neither player rolls in the roll-off, the round is cancelled. |
+| Blackjack hit/stand phase | Stands automatically with their current total. |
 
 ## Game Modes
 

@@ -3,6 +3,10 @@ AztecGambling = LibStub("AceAddon-3.0"):NewAddon("AztecGambling", "AceConsole-3.
 local AztecGambling	= LibStub("AceAddon-3.0"):GetAddon("AztecGambling")
 local AceGUI = LibStub("AceGUI-3.0")
 
+-- Seconds players get to roll in each roll phase, and when to warn them in chat
+local ROLL_TIME_LIMIT = 60
+local ROLL_WARNING_SECONDS = 10
+
 
 -- Initializer 
 -- =============
@@ -247,9 +251,6 @@ function AztecGambling:StartRolls()
 	-- Cancel the countdown to start if its there
 	self:CancelAllTimers()
 
-	-- Players have 1 minute to roll - RollStatus() reports how much is left
-	self.game.data.roll_deadline = GetTime() + 60
-
 	-- Turn-based modes (ex: Countdown) run their own start sequence
 	if self.game.mode.turn_based then
 		self:StartCountdownTurn()
@@ -278,6 +279,9 @@ function AztecGambling:StartRolls()
 	self.game.data.accepting_rolls = true
 	self.game.data.accepting_players = false
 
+	-- Every roll phase, tiebreakers included, gets its own time limit
+	self:StartRollTimer()
+
 	-- Tell Tiebreakers Who Has to Roll
 	local roll_msg = ""
 	if self.game.data.high_tiebreaker then
@@ -290,7 +294,7 @@ function AztecGambling:StartRolls()
 
 	-- Off to the races!
 	self:MessageChat(roll_msg)
-	self:MessageChat(AG_MESSAGES.ROLL_GOODLUCK(self.game.data.roll_range))
+	self:MessageChat(AG_MESSAGES.ROLL_GOODLUCK(self.game.data.roll_range, ROLL_TIME_LIMIT))
 end
 
 -- (Countdown) Kick off a turn-based game: settle who goes first with a 1-100 roll-off
@@ -319,6 +323,7 @@ function AztecGambling:StartCountdownStarterRoll()
 	self:MessageChat(AG_MESSAGES.ROLL_OFF_FIRST)
 	self:MessageAddon("AG_TURN_UPDATE", "RollOff 1 100")
 	self:UpdateRollStatusUI()
+	self:StartRollTimer()
 end
 
 -- (Countdown) Handle one player's roll-off roll; once both are in, higher starts (tie = reroll)
@@ -349,6 +354,7 @@ function AztecGambling:CountdownStarterRollCallback(player, roll, roll_range)
 
 	self:MessageChat(AG_MESSAGES.ROLL_OFF_WINNER(starter, self.game.data.roll_range))
 	self:MessageAddon("AG_TURN_UPDATE", starter.." "..self.game.data.roll_lower.." "..self.game.data.roll_upper)
+	self:StartRollTimer() -- the time limit applies to each turn
 end
 
 -- (Countdown) Handle one player's roll, pass the turn, or end the game on a 1
@@ -381,6 +387,7 @@ function AztecGambling:CountdownRollCallback(player, roll, roll_range)
 	self:UpdateRollStatusUI()
 	self:MessageChat(AG_MESSAGES.OPPONENT_TURN(opponent, self.game.data.roll_range))
 	self:MessageAddon("AG_TURN_UPDATE", opponent.." "..self.game.data.roll_lower.." "..self.game.data.roll_upper)
+	self:StartRollTimer()
 end
 
 function AztecGambling:PrintTieBreakerPlayers(players)
@@ -460,6 +467,7 @@ function AztecGambling:StartBlackjackHitPhase()
 
 	self:MessageChat(AG_MESSAGES.DEALT)
 	self:UpdateRollStatusUI()
+	self:StartRollTimer() -- the hit/stand phase gets its own time limit
 	self:CheckBlackjackHandsComplete()
 end
 
@@ -469,6 +477,212 @@ function AztecGambling:CheckBlackjackHandsComplete()
 		if active then return end
 	end
 	self:GameLoop()
+end
+
+-- Roll Time Limit
+-- =================
+-- Every roll phase (each round, each tiebreaker, each Countdown roll and the
+-- Blackjack hit phase) gets ROLL_TIME_LIMIT seconds, with a warning in chat
+-- ROLL_WARNING_SECONDS before the end
+function AztecGambling:StartRollTimer()
+	self:StopRollTimer()
+	self.game.data.roll_deadline = GetTime() + ROLL_TIME_LIMIT
+	self.roll_warning_timer = self:ScheduleTimer("RollTimeWarning", ROLL_TIME_LIMIT - ROLL_WARNING_SECONDS)
+	self.roll_timeout_timer = self:ScheduleTimer("RollTimeExpired", ROLL_TIME_LIMIT)
+end
+
+function AztecGambling:StopRollTimer()
+	if self.roll_warning_timer then self:CancelTimer(self.roll_warning_timer) end
+	if self.roll_timeout_timer then self:CancelTimer(self.roll_timeout_timer) end
+	self.roll_warning_timer = nil
+	self.roll_timeout_timer = nil
+end
+
+-- Players the current roll phase is still waiting on, sorted by name
+function AztecGambling:GetPendingRollers()
+	local pending = {}
+	if self.game.mode.hit_stand and self.game.data.dealt then
+		for player, active in pairs(self.game.data.blackjack_active) do
+			if active then table.insert(pending, player) end
+		end
+	elseif self.game.mode.turn_based and (not self.game.data.determining_starter) then
+		table.insert(pending, self.game.data.turn_player)
+	else
+		for player, roll in pairs(self.game.data.player_rolls) do
+			if (roll == -1) then table.insert(pending, player) end
+		end
+	end
+	table.sort(pending)
+	return pending
+end
+
+function AztecGambling:RollTimeWarning()
+	if (self.game.data == nil) then return end
+
+	local pending = self:GetPendingRollers()
+	if (#pending > 0) then
+		self:MessageChat(AG_MESSAGES.ROLL_TIME_WARNING(ROLL_WARNING_SECONDS, pending))
+	end
+end
+
+function AztecGambling:RollTimeExpired()
+	if (self.game.data == nil) then return end
+
+	local pending = self:GetPendingRollers()
+	if (#pending == 0) then return end
+
+	if self.game.mode.hit_stand and self.game.data.dealt then
+		self:TimeoutAutoStand(pending)
+	elseif self.game.mode.turn_based then
+		self:TimeoutCountdown(pending)
+	elseif self.game.data.low_tiebreaker then
+		self:TimeoutLowTiebreaker(pending)
+	elseif self.game.data.high_tiebreaker and (self.game.data.loser == nil) then
+		-- Only happens when everyone tied in the first round
+		if self.game.mode.everyone_tied_removes then
+			self:TimeoutRemovePlayers(pending)
+		else
+			self:TimeoutEveryoneTied(pending)
+		end
+	elseif self.game.data.high_tiebreaker then
+		self:TimeoutHighTiebreaker(pending)
+	else
+		self:TimeoutRemovePlayers(pending)
+	end
+end
+
+function AztecGambling:RemoveFromRolls(players)
+	for _, player in ipairs(players) do
+		self.game.data.player_rolls[player] = nil
+	end
+end
+
+-- Normal round: players who didn't roll are out, the rest are scored as usual
+function AztecGambling:TimeoutRemovePlayers(pending)
+	self:RemoveFromRolls(pending)
+	if (self:TableLength(self.game.data.player_rolls) < 2) then
+		self:CancelRound()
+		return
+	end
+
+	self:MessageChat(AG_MESSAGES.TIMEOUT_REMOVED(pending))
+	self:UpdateRollStatusUI()
+	self:CheckRollsComplete(false)
+end
+
+-- Winners' tiebreaker: players who didn't roll give up the win (the loser is already decided)
+function AztecGambling:TimeoutHighTiebreaker(pending)
+	self:RemoveFromRolls(pending)
+	local remaining = self:TableLength(self.game.data.player_rolls)
+	if (remaining == 0) then
+		self:CancelRound()
+		return
+	end
+
+	self:MessageChat(AG_MESSAGES.TIMEOUT_GAVE_UP_WIN(pending))
+	if (remaining == 1) then
+		self.game.data.winner = next(self.game.data.player_rolls)
+		self:FinishGame()
+	else
+		self:UpdateRollStatusUI()
+		self:CheckRollsComplete(false)
+	end
+end
+
+-- Losers' tiebreaker: a player who didn't roll loses. If several didn't roll,
+-- they go to a new losers' tiebreaker among themselves
+function AztecGambling:TimeoutLowTiebreaker(pending)
+	if (#pending > 1) then
+		self:MessageChat(AG_MESSAGES.TIMEOUT_TIED_LAST(pending))
+		self.game.data.player_rolls = {}
+		for _, player in ipairs(pending) do
+			self.game.data.player_rolls[player] = -1
+		end
+		self:StartRolls()
+		return
+	end
+
+	self:RemoveFromRolls(pending)
+	self:MessageChat(AG_MESSAGES.TIMEOUT_LOSES(pending[1]))
+	self.game.data.loser = pending[1]
+	self.game.data.low_tiebreaker = false
+	self.game.data.low_roller_playoff = {}
+
+	-- Same hand-off as EvaluateScores once the loser is found: settle a tied win first, if there is one
+	if (self:TableLength(self.game.data.high_roller_playoff) > 1) then
+		self.game.data.high_tiebreaker = true
+		self.game.data.player_rolls = self:CopyTable(self.game.data.high_roller_playoff)
+		self:StartRolls()
+	else
+		self:FinishGame()
+	end
+end
+
+-- Everyone tied, so this tiebreaker decides both the winner and the loser: players
+-- who didn't roll give up the win and lose, same as in a losers' tiebreaker
+function AztecGambling:TimeoutEveryoneTied(pending)
+	self:RemoveFromRolls(pending)
+	if (self:TableLength(self.game.data.player_rolls) == 0) then
+		self:CancelRound()
+		return
+	end
+
+	-- Everyone rolled the same score in the first round, so that is also the losing roll.
+	-- The loser won't have a tiebreaker roll to take it from
+	if (self.game.data.losing_roll == nil) then
+		self.game.data.losing_roll = self.game.data.winning_roll
+	end
+
+	if (#pending == 1) then
+		self:MessageChat(AG_MESSAGES.TIMEOUT_LOSES(pending[1]))
+		self.game.data.loser = pending[1]
+	else
+		-- EvaluateScores starts a losers' tiebreaker among these players once the winner is decided
+		self:MessageChat(AG_MESSAGES.TIMEOUT_TIED_LAST(pending))
+		self.game.data.low_roller_playoff = {}
+		for _, player in ipairs(pending) do
+			self.game.data.low_roller_playoff[player] = -1
+		end
+	end
+
+	-- The players who rolled settle the win among themselves
+	self:UpdateRollStatusUI()
+	self:CheckRollsComplete(false)
+end
+
+-- Countdown: a player who doesn't roll loses. If neither rolled the roll-off, the round is cancelled
+function AztecGambling:TimeoutCountdown(pending)
+	if (#pending > 1) then
+		self:CancelRound()
+		return
+	end
+
+	local p1, p2 = self.game.data.turn_order[1], self.game.data.turn_order[2]
+	self.game.data.accepting_rolls = false
+	self.game.data.loser = pending[1]
+	self.game.data.winner = (pending[1] == p1) and p2 or p1
+	self:MessageChat(AG_MESSAGES.TIMEOUT_LOSES(pending[1]))
+	self:FinishGame()
+end
+
+-- (Blackjack) Hit/stand phase: players who haven't finished stand on their current total
+function AztecGambling:TimeoutAutoStand(pending)
+	for _, player in ipairs(pending) do
+		self.game.data.blackjack_active[player] = false
+		self.game.data.awaiting_hit[player] = nil
+	end
+	self:MessageChat(AG_MESSAGES.TIMEOUT_AUTO_STAND(pending))
+	self:UpdateRollStatusUI()
+	self:CheckBlackjackHandsComplete()
+end
+
+-- End the round with no payout, ex: not enough players rolled in time
+function AztecGambling:CancelRound()
+	self:MessageChat(AG_MESSAGES.TIMEOUT_CANCELLED)
+	self:CloseRollStatusUI()
+	self:UnregisterChatEvents()
+	self.game.data = nil
+	self:ResetGameStage()
 end
 
 function AztecGambling:FinishGame()
@@ -503,9 +717,7 @@ function AztecGambling:EndGame()
 	self.ui.AG_Frame:SetStatusText(self.game.data.cash_winnings.."g  "..self.game.data.loser.." => "..self.game.data.winner)
 	
 	-- Clear the Roll Status UI
-	self.ui.AG_RollFrame:ReleaseChildren()
-	self.ui.AG_RollFrame:Release()
-	self.ui.AG_RollFrame = nil
+	self:CloseRollStatusUI()
 
 	-- Reset Game Hooks and Data
 	self:UnregisterChatEvents()
@@ -796,8 +1008,15 @@ function AztecGambling:UpdateRollStatusUI()
 			label:SetColor(255, 255, 0)
 			self.ui.AG_RollFrameScroll:AddChild(label)
 		end
-	
+
 	end
+end
+
+function AztecGambling:CloseRollStatusUI()
+	if (self.ui.AG_RollFrame == nil) then return end
+	self.ui.AG_RollFrame:ReleaseChildren()
+	self.ui.AG_RollFrame:Release()
+	self.ui.AG_RollFrame = nil
 end
 
 
