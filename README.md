@@ -32,7 +32,7 @@ Both buttons always download the latest version, built automatically from the `m
 3. The host presses **Start!** again to close entries and begin accepting rolls — every player rolls the range shown in chat (or clicks **Roll!**/uses **Roll for Me**).
    - Players have **1 minute** to roll, and the addon warns in chat who is still missing when 10 seconds are left. Pressing **Status** also posts who still needs to roll and how many seconds are left. See [Roll Time Limit](#roll-time-limit) for what happens when time runs out.
 4. Once everyone has rolled, the addon scores the round, resolves ties automatically with a reroll among the tied players, and announces the result: `<loser> owes <winner> <amount> gold!`
-5. Settle up in-game (currently manual — see [Known Issues](#known-issues)), then press **Start!** again for a new round, or **Reset** to cancel the current one.
+5. Settle up in-game: the loser can press **Trade** to open a trade with the winner, then enter the gold manually (see [Known Issues](#known-issues)). Then press **Start!** again for a new round, or **Reset** to cancel the current one.
 
 ### Roll Time Limit
 
@@ -64,7 +64,7 @@ Selected from the mode dropdown in the **Casino** box. All modes pay out the bet
 
 ## Main Window (Casino / Host)
 
-- **Row 1:** `Enter` (send a `1` on your own behalf), `Roll!` (roll the current range for yourself), `Payout` (currently disabled — see [Known Issues](#known-issues)).
+- **Row 1:** `Enter` (send a `1` on your own behalf), `Roll!` (roll the current range for yourself), `Trade` (opens a trade with the last round's winner — see [Known Issues](#known-issues)).
 - **Casino box:**
   - **Row 2:** gold amount entry, chat channel select (Say / Party / Raid), game mode select.
   - **Row 3:** the game stage button (cycles New Game → Last Call → Start Rolling → Status, and shows the current stage as its label), `Reset` (cancels the active round), `PAY!` (re-announces the last payout message, in case it was missed or a new round started before anyone settled up).
@@ -72,7 +72,7 @@ Selected from the mode dropdown in the **Casino** box. All modes pay out the bet
 
 ## Companion Window (Players)
 
-Pops up automatically for anyone with the addon installed when a round starts on their channel (toggle this with `/ag auto`). Buttons: `Enter`, `Roll` (rolls the correct range automatically), `Payout` (currently disabled — see [Known Issues](#known-issues)).
+Pops up automatically for anyone with the addon installed when a round starts on their channel (toggle this with `/ag auto`). Buttons: `Enter`, `Roll` (rolls the correct range automatically), `Trade` (opens a trade with the last round's winner — see [Known Issues](#known-issues)).
 
 ## Slash Commands
 
@@ -94,7 +94,10 @@ All commands are under `/ag`:
 
 ## Known Issues
 
-- **Payout** is disabled on both windows — it isn't wiring up the trade window correctly right now. Use the **PAY!** button (or just read the chat message) to see who owes whom, and trade manually.
+- **Trade doesn't fill in the gold.** Because of WoW API limitations, the addon can't enter the gold amount in the trade window. The **Trade** button (in both windows) only opens a trade with the winner of the last round, and the gold has to be entered manually. The amount is in the payout message (`<loser> owes <winner> <amount> gold!`), and **PAY!** re-announces it.
+  - It always opens the trade with the winner, no matter who presses it, so it's meant for the loser. If the winner presses it, it tries to open a trade with themselves.
+  - You need to be close enough to the winner for the game to open the trade.
+  - It only has a winner to trade with between the end of a round and the start of the next one. Pressed before the first round, it throws a Lua error; in the casino window, the same happens after **Reset** or after a round is cancelled.
 
 ## Support
 
