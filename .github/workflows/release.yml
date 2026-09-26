@@ -1,0 +1,66 @@
+# Builds one zip per game version from main and publishes them as a new GitHub Release.
+# Runs on every push to main, so these links always download what's on main:
+#   https://github.com/PiyuDevelop/AztecGambling/releases/latest/download/AztecGambling-Retail.zip
+#   https://github.com/PiyuDevelop/AztecGambling/releases/latest/download/AztecGambling-Vanilla.zip
+#
+# Each push creates a new release (e.g. v12.1.0-build.7) instead of replacing the zips in the
+# previous one, because replacing a zip resets its download count and the README counter.
+
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+    # Changes that don't affect the zips don't need a new release.
+    paths-ignore:
+      - "docs/**"
+      - "media/**"
+      - "README.md"
+      - ".github/FUNDING.yml"
+
+permissions:
+  contents: write
+
+# Pushes made close together publish one after the other, so the newest one ends up as the latest release.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Build a zip for each game version
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+
+          for flavor in Retail Vanilla; do
+            if [ "$flavor" = "Retail" ]; then
+              toc="AztecGambling.toc"
+            else
+              toc="AztecGambling_${flavor}.toc"
+            fi
+
+            # The folder inside the zip must be named AztecGambling, or WoW won't load the addon.
+            # Each zip only has its own .toc file. Add any new addon files or folders to this list.
+            build="build/$flavor/AztecGambling"
+            mkdir -p "$build"
+            cp -r "$toc" *.lua libs LICENSE "$build/"
+
+            (cd "build/$flavor" && zip -rq "../../dist/AztecGambling-$flavor.zip" AztecGambling)
+          done
+
+          ls -l dist
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          version=$(grep '^## Version:' AztecGambling.toc | cut -d' ' -f3 | tr -d '\r')
+          tag="v${version}-build.${GITHUB_RUN_NUMBER}"
+          gh release create "$tag" dist/*.zip --target "$GITHUB_SHA" --title "$tag" --generate-notes --latest
