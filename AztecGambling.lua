@@ -6,7 +6,7 @@ local AceGUI = LibStub("AceGUI-3.0")
 local CreateFrame, UIParent = CreateFrame, UIParent
 
 -- Seconds players get to roll in each roll phase, and when to warn them in chat
-local ROLL_TIME_LIMIT = 60
+local ROLL_TIME_LIMIT = 45
 local ROLL_WARNING_SECONDS = 10
 
 
@@ -51,11 +51,11 @@ function AztecGambling:OnInitialize()
 		channel_id = self.db.global.chat_index,
 		channel = {},
 		CHANNEL_CONSTS = { 
-			{ label = "Raid"  ,   const = "RAID"  ,  addon_const = "RAID",  callback = "CHAT_MSG_RAID"  ,  callback_leader = "CHAT_MSG_RAID_LEADER"  }, -- Index 1
-			{ label = "Party" ,   const = "PARTY" ,  addon_const = "PARTY", callback = "CHAT_MSG_PARTY" ,  callback_leader = "CHAT_MSG_PARTY_LEADER" }, -- Index 2
-			{ label = "Guild" ,   const = "GUILD" ,  addon_const = "GUILD", callback = "CHAT_MSG_GUILD"     },                     -- Index 3
-			{ label = "Say"   ,   const = "SAY"   ,  addon_const = "GUILD", callback = "CHAT_MSG_SAY"       },                     -- Index 4
-    		{ label = "AG", const = "CHANNEL", addon_const = "CHANNEL", callback = "CHAT_MSG_CHANNEL" },                     -- Index 5
+			{ label = "Raid"  ,   const = "RAID"  	,  addon_const = "RAID"		, callback = "CHAT_MSG_RAID"  ,  callback_leader = "CHAT_MSG_RAID_LEADER"  }, -- Index 1
+			{ label = "Party" ,   const = "PARTY" 	,  addon_const = "PARTY"	, callback = "CHAT_MSG_PARTY" ,  callback_leader = "CHAT_MSG_PARTY_LEADER" }, -- Index 2
+			{ label = "Guild" ,   const = "GUILD" 	,  addon_const = "GUILD"	, callback = "CHAT_MSG_GUILD"     },                     -- Index 3
+			{ label = "Say"   ,   const = "SAY"   	,  addon_const = "GUILD"	, callback = "CHAT_MSG_SAY"       },                     -- Index 4
+    		{ label = "AG"	  ,   const = "CHANNEL"	,  addon_const = "CHANNEL"	, callback = "CHAT_MSG_CHANNEL" },                     -- Index 5
 		}
 	}	
 
@@ -1294,7 +1294,7 @@ function AztecGambling:ConstructUI()
 		main_frame = {
 			width = 400,
 			-- Extra ~25px below the Casino group for the roll-countdown row
-			height = 215
+			height = 220
 		},
 
 		-- Each row is built with the AceGUI "Table" layout: a {weight=1} spacer
@@ -1564,8 +1564,10 @@ do
 
 			local track = frame:CreateTexture(nil, "BACKGROUND")
 			track:SetColorTexture(0, 0, 0, 0.5)
-			track:SetPoint("TOPLEFT", caption, "TOPRIGHT", INSET, -2)
-			track:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -(TEXT_WIDTH + INSET), 2)
+			-- Both offsets moved -2 vs the caption/frame so the bar keeps its
+			-- height but sits 2px higher inside the row (the fill follows it)
+			track:SetPoint("TOPLEFT", caption, "TOPRIGHT", INSET, -4)
+			track:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -(TEXT_WIDTH + INSET), 6)
 
 			local fill = frame:CreateTexture(nil, "ARTWORK")
 			fill:SetColorTexture(1, 1, 1, 1)
