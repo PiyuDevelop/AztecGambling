@@ -2,6 +2,8 @@
 AztecGambling = LibStub("AceAddon-3.0"):NewAddon("AztecGambling", "AceConsole-3.0", "AceComm-3.0", "AceEvent-3.0", "AceTimer-3.0", "AceHook-3.0", "AceSerializer-3.0")
 local AztecGambling	= LibStub("AceAddon-3.0"):GetAddon("AztecGambling")
 local AceGUI = LibStub("AceGUI-3.0")
+-- Used by the RollCountdown widget's constructor near the bottom of this file
+local CreateFrame, UIParent = CreateFrame, UIParent
 
 -- Seconds players get to roll in each roll phase, and when to warn them in chat
 local ROLL_TIME_LIMIT = 60
@@ -122,7 +124,11 @@ function AztecGambling:RegisterChatEvents()
 end
 
 function AztecGambling:UnregisterChatEvents()
+	-- Cancels everything still scheduled: the TimedStart from LastCall and,
+	-- defensively, the roll countdown updater. Roll timers themselves are
+	-- stopped via StopRollTimer on every path that gets here first
 	self:CancelAllTimers()
+	self:HideRollCountdown()
 	self:UnregisterEvent("CHAT_MSG_SYSTEM")
 	self:UnregisterEvent(self.chat.channel.callback)
 	if (self.chat.channel.callback_leader) then
@@ -248,8 +254,10 @@ end
 
 -- (stage_id = 3) After accepting entries via chat callbacks, start the rolls
 function AztecGambling:StartRolls()
-	-- Cancel the countdown to start if its there
+	-- Cancel the countdown to start if its there, and drop any live roll
+	-- timer/bar so a below-quorum early return can't leave a frozen countdown
 	self:CancelAllTimers()
+	self:StopRollTimer()
 
 	-- Turn-based modes (ex: Countdown) run their own start sequence
 	if self.game.mode.turn_based then
@@ -489,6 +497,7 @@ function AztecGambling:StartRollTimer()
 	self.game.data.roll_deadline = GetTime() + ROLL_TIME_LIMIT
 	self.roll_warning_timer = self:ScheduleTimer("RollTimeWarning", ROLL_TIME_LIMIT - ROLL_WARNING_SECONDS)
 	self.roll_timeout_timer = self:ScheduleTimer("RollTimeExpired", ROLL_TIME_LIMIT)
+	self:ShowRollCountdown()
 end
 
 function AztecGambling:StopRollTimer()
@@ -496,6 +505,66 @@ function AztecGambling:StopRollTimer()
 	if self.roll_timeout_timer then self:CancelTimer(self.roll_timeout_timer) end
 	self.roll_warning_timer = nil
 	self.roll_timeout_timer = nil
+	self:HideRollCountdown()
+	if (self.game.data ~= nil) then
+		self.game.data.roll_deadline = nil
+	end
+end
+
+-- Roll Countdown UI
+-- =================
+-- The in-window mirror of the roll deadline: a progress bar with a caption and
+-- the seconds left, shown only while a timed roll phase is live. Called from
+-- StartRollTimer/StopRollTimer only, so every phase updates it automatically.
+-- Visibility uses frame alpha because the Flow layout force-shows every child
+-- frame on each layout pass - Hide() on an AG_Frame child would not stick
+function AztecGambling:ShowRollCountdown()
+	if (self.ui.roll_countdown == nil) then return end
+	-- Idempotent: a phase restarting while the bar is live (tiebreakers,
+	-- Countdown rerolls/turns) must never stack repeating timers
+	self:HideRollCountdown()
+	self.ui.roll_countdown.frame:SetAlpha(1)
+	self.countdown_timer = self:ScheduleRepeatingTimer("UpdateRollCountdown", 0.2)
+	self:UpdateRollCountdown()
+end
+
+function AztecGambling:HideRollCountdown()
+	if self.countdown_timer then self:CancelTimer(self.countdown_timer) end
+	self.countdown_timer = nil
+	if (self.ui.roll_countdown ~= nil) then
+		self.ui.roll_countdown.frame:SetAlpha(0)
+	end
+	-- NOTE: deliberately does NOT clear roll_deadline - ShowRollCountdown
+	-- re-hides first for idempotency, right after StartRollTimer set it.
+	-- StopRollTimer owns clearing it.
+end
+
+-- Refresh bar + texts from the roll deadline; the sole periodic caller is
+-- countdown_timer, started/stopped by Show/HideRollCountdown
+function AztecGambling:UpdateRollCountdown()
+	local bar = self.ui.roll_countdown
+	if (bar == nil) or (self.game.data == nil) or (self.game.data.roll_deadline == nil) then return end
+
+	local left = math.max(0, self.game.data.roll_deadline - GetTime())
+	bar:SetFraction(left / ROLL_TIME_LIMIT)
+
+	-- Red during the final seconds, mirroring the chat warning window
+	if (left <= ROLL_WARNING_SECONDS) then
+		bar:SetBarColor(1.0, 0.2, 0.2)
+		bar:SetSecondsColor(1.0, 0.2, 0.2)
+	else
+		bar:SetBarColor(0.2, 1.0, 0.2)
+		bar:SetSecondsColor(1.0, 0.82, 0.0)
+	end
+
+	if (left > 0) then
+		bar:SetCaption("Rolls close in")
+		bar:SetSecondsText(math.ceil(left) .. "s")
+	else
+		-- RollTimeExpired fires at 0; the 0.2s updater may land here first
+		bar:SetCaption("Time's up!")
+		bar:SetSecondsText("")
+	end
 end
 
 -- Players the current roll phase is still waiting on, sorted by name
@@ -680,6 +749,9 @@ end
 function AztecGambling:CancelRound()
 	self:MessageChat(AG_MESSAGES.TIMEOUT_CANCELLED)
 	self:CloseRollStatusUI()
+	-- Stop the roll timers/countdown explicitly before nil'ing the game data,
+	-- so the bar can't linger on a frame with no deadline behind it
+	self:StopRollTimer()
 	self:UnregisterChatEvents()
 	self.game.data = nil
 	self:ResetGameStage()
@@ -711,6 +783,10 @@ end
 
 
 function AztecGambling:EndGame()
+	-- The roll timers are usually still live when everyone finished early -
+	-- stop them (and the countdown bar) before archiving the game data
+	self:StopRollTimer()
+
 	-- Tell  the clients and UI were done
 	local end_args = self.game.data.winner.." "..self.game.data.loser.." "..self.game.data.cash_winnings
 	self:MessageAddon("AG_END_GAME", end_args)
@@ -727,6 +803,7 @@ end
 
 
 function AztecGambling:ResetGame()
+	self:StopRollTimer()
 	self:UnregisterChatEvents()
 	self.game.data = nil
 	self:ResetGameStage()
@@ -1216,7 +1293,8 @@ function AztecGambling:ConstructUI()
 		-- Main Box Frame --
 		main_frame = {
 			width = 400,
-			height = 190
+			-- Extra ~25px below the Casino group for the roll-countdown row
+			height = 215
 		},
 
 		-- Each row is built with the AceGUI "Table" layout: a {weight=1} spacer
@@ -1380,8 +1458,17 @@ function AztecGambling:ConstructUI()
 
 	self.ui.AG_Frame:AddChild(self.ui.AG_CasinoGroup)
 
+	-- Countdown bar: shown only while a timed roll phase is live (StartRollTimer/
+	-- StopRollTimer). Stock AceGUI-3.0 has no ProgressBar widget, so a private
+	-- "RollCountdown" widget type is registered at the bottom of this file -
+	-- the bundled libs\Ace3 stays untouched. Caption and seconds text live
+	-- inside the widget; it starts alpha-hidden since the Flow layout of
+	-- AG_Frame would force-show it otherwise
+	self.ui.roll_countdown = AceGUI:Create("RollCountdown")
+	self.ui.roll_countdown:SetWidth(ag_ui_elements.main_frame.width)
+	self.ui.AG_Frame:AddChild(self.ui.roll_countdown)
+	self.ui.roll_countdown.frame:SetAlpha(0)
 
-	
 	if (self.db.global.ui_frame ~= nil) then
 		-- Restore the saved position, but always keep the width/height defined above -
 		-- otherwise a size saved by an older layout (fewer rows) keeps overriding it forever
@@ -1396,4 +1483,117 @@ function AztecGambling:ConstructUI()
 	
 	-- Register for UI Events
 	self:RegisterEvent("PLAYER_LEAVING_WORLD", function(...) self:SaveFrameState(...) end)
+end
+
+-- AceGUI "RollCountdown" Widget
+-- ============================
+-- A minimal read-only progress bar: fixed-width caption on the left, the bar
+-- in the middle, a right-aligned seconds text at the end. Stock AceGUI-3.0 has
+-- no ProgressBar, and registering it here (instead of under libs\Ace3) keeps
+-- the bundled libraries untouched. Built for the roll-phase countdown and
+-- driven by AztecGambling:UpdateRollCountdown
+do
+	local Type, Version = "RollCountdown", 1
+
+	if (AceGUI:GetWidgetVersion(Type) or 0) < Version then
+		-- How much of the widget's width the caption and seconds text get
+		local CAPTION_WIDTH = 150
+		local TEXT_WIDTH = 44
+		local INSET = 4
+
+		local function UpdateBar(self)
+			-- Compute the track width from the widget's own width and the fixed
+			-- caption/text columns - anchored texture widths may not be resolved
+			-- yet during layout, the arithmetic always is
+			local width = self.frame:GetWidth() or self.width or 200
+			local track_width = math.max(0, width - CAPTION_WIDTH - TEXT_WIDTH - INSET * 2)
+			local frac = self.fraction or 0
+			if frac < 0 then frac = 0 elseif frac > 1 then frac = 1 end
+			self.fill:SetWidth(frac * track_width)
+		end
+
+		local methods = {
+			["OnAcquire"] = function(self)
+				self:SetWidth(200)
+				self:SetHeight(22)
+				self:SetCaption("")
+				self:SetSecondsText("")
+				self:SetBarColor(1, 1, 1)
+				self:SetSecondsColor(1, 0.82, 0)
+				self:SetFraction(0)
+			end,
+
+			-- Progress on a 0-1 scale
+			["SetFraction"] = function(self, value)
+				self.fraction = value
+				UpdateBar(self)
+			end,
+
+			["SetCaption"] = function(self, text)
+				self.caption:SetText(text or "")
+			end,
+
+			["SetSecondsText"] = function(self, text)
+				self.seconds:SetText(text or "")
+			end,
+
+			["SetSecondsColor"] = function(self, r, g, b)
+				self.seconds:SetTextColor(r or 1, g or 1, b or 1, 1)
+			end,
+
+			["SetBarColor"] = function(self, r, g, b)
+				self.fill:SetColorTexture(r or 1, g or 1, b or 1, 1)
+			end,
+
+			["OnWidthSet"] = function(self)
+				-- The track spans between the anchored caption/seconds, so its
+				-- width already follows ours - just redraw the bar against it
+				UpdateBar(self)
+			end,
+		}
+
+		local function Constructor()
+			local frame = CreateFrame("Frame", nil, UIParent)
+			frame:SetHeight(22)
+
+			local caption = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+			caption:SetPoint("TOPLEFT", frame, "TOPLEFT")
+			caption:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT")
+			caption:SetWidth(CAPTION_WIDTH)
+			caption:SetJustifyH("LEFT")
+
+			local track = frame:CreateTexture(nil, "BACKGROUND")
+			track:SetColorTexture(0, 0, 0, 0.5)
+			track:SetPoint("TOPLEFT", caption, "TOPRIGHT", INSET, -2)
+			track:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -(TEXT_WIDTH + INSET), 2)
+
+			local fill = frame:CreateTexture(nil, "ARTWORK")
+			fill:SetColorTexture(1, 1, 1, 1)
+			fill:SetPoint("TOPLEFT", track, "TOPLEFT")
+			fill:SetPoint("BOTTOMLEFT", track, "BOTTOMLEFT")
+			fill:SetWidth(0)
+
+			local seconds = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+			seconds:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -2, -2)
+			seconds:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -2, 2)
+			seconds:SetWidth(TEXT_WIDTH)
+			seconds:SetJustifyH("RIGHT")
+
+			local widget = {
+				frame   = frame,
+				caption = caption,
+				track   = track,
+				fill    = fill,
+				seconds = seconds,
+				type    = Type,
+			}
+			for method, func in pairs(methods) do
+				widget[method] = func
+			end
+
+			return AceGUI:RegisterAsWidget(widget)
+		end
+
+		AceGUI:RegisterWidgetType(Type, Constructor, Version)
+	end
 end
