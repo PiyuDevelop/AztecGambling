@@ -1,18 +1,27 @@
 # Aztec Gambling
 
+[![Downloads](https://img.shields.io/github/downloads/PiyuDevelop/AztecGambling/total?label=downloads)](https://github.com/PiyuDevelop/AztecGambling/releases)
+
 Aztec Gambling is a World of Warcraft addon for running group gambling games over `/roll` in Raid, Party, or Say chat. One person runs the "casino" from the main window; everyone else can play along with a lightweight companion window that pops up automatically when a round starts.
 
 Only the host needs the addon installed — anyone else can join by typing `1` in the game's chat channel and rolling with `/roll`. The companion window is just a convenience.
 
+## Download
+
+[![Download for Retail](https://img.shields.io/badge/Download-Retail-2ea44f?style=for-the-badge)](https://github.com/PiyuDevelop/AztecGambling/releases/latest/download/AztecGambling-Retail.zip)
+[![Download for Classic Era](https://img.shields.io/badge/Download-Classic_Era-2ea44f?style=for-the-badge)](https://github.com/PiyuDevelop/AztecGambling/releases/latest/download/AztecGambling-Vanilla.zip)
+
+Both buttons always download the latest version, built automatically from the `main` branch. Older builds are on the [Releases](https://github.com/PiyuDevelop/AztecGambling/releases) page.
+
 ## Requirements
 
-- Interface: `120100` (see `AztecGambling.toc` / `_Vanilla.toc` / `_Wrath.toc` for the version matching your client)
+- Game version: Retail (Interface `120100`) or Classic Era (Interface `11403`)
 - Bundled libraries (no separate download needed): Ace3, LibDBIcon-1.0
 
 ## Installation
 
-1. Copy the `AztecGambling` folder into your `Interface/AddOns` directory.
-   - If you downloaded the ZIP from GitHub, the extracted folder is named `AztecGambling-main` — rename it to `AztecGambling`, or WoW won't load the addon (the folder name must match the `.toc` name).
+1. Download the ZIP for your game version (see [Download](#download)) and extract it into your `Interface/AddOns` directory. The ZIP already contains the `AztecGambling` folder, so you should end up with `Interface/AddOns/AztecGambling/`.
+   - Installing from the source code instead (for example, GitHub's **Code → Download ZIP**)? The extracted folder is named `AztecGambling-main` — rename it to `AztecGambling`, or WoW won't load the addon (the folder name must match the `.toc` name).
 2. Enable it at the character select screen (or in-game addon list).
 3. Click the coin minimap icon, or type `/ag`, to open the casino window.
 
