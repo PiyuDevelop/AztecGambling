@@ -18,6 +18,11 @@ on:
       - "media/**"
       - "README.md"
       - ".github/FUNDING.yml"
+      # Tests and their tooling (never part of the zips)
+      - "spec/**"
+      - "scripts/**"
+      - ".busted"
+      - ".github/workflows/tests.yml"
 
 permissions:
   contents: write
