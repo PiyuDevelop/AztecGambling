@@ -144,8 +144,21 @@ assert.are.same(-443, ag.db.global.rankings["Piyu"])
 - [x] **Update `paths-ignore` in `release.yml`** (see *Files*).
 
 ### Milestone 2: The addon loads
-- [ ] Write `clock.lua`, `wow_api.lua`, `ace_stubs.lua`, `ui_stub.lua` and `loader.lua`.
-- [ ] **Smoke test:** the addon loads and initializes with no errors, both slash commands are registered, and the default database values are in place.
+- [x] Write `clock.lua`, `wow_api.lua`, `ace_stubs.lua`, `ui_stub.lua` and `loader.lua`. The loader reads the file order from `AztecGambling.toc`, so new files are picked up automatically.
+- [x] **`load_spec.lua`** (smoke test):
+  - the addon loads and initializes with no errors;
+  - both slash commands are registered;
+  - the default database values are in place, and settings saved in a previous session are restored;
+  - the minimap button and the companion window's listeners are set up;
+  - nothing is sent while loading;
+  - every load starts clean.
+
+  It also checks that the three `.toc` files load the same addon files.
+- [x] **`fake_clock_spec.lua` and `ace_stubs_spec.lua`:** every roll time limit test depends on the fake clock and the stand-ins, so their behavior has its own tests:
+  - timer order;
+  - repeating and cancelled timers;
+  - callback arguments;
+  - a second registration of the same event replacing the first.
 
 ### Milestone 3: Rules in isolation
 - [ ] **`utils_spec.lua`:** `SplitString`, `sortedpairs` (with and without a sort function), `TableLength`, `CopyTable` and `deepcopy`.
