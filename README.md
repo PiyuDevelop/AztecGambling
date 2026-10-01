@@ -99,6 +99,27 @@ All commands are under `/ag`:
   - You need to be close enough to the winner for the game to open the trade.
   - It only has a winner to trade with between the end of a round and the start of the next one. Pressed before the first round, it throws a Lua error; in the casino window, the same happens after **Reset** or after a round is cancelled.
 
+## Running the Tests
+
+The game logic is covered by automated tests that run outside the game, in Docker. That way nothing has to be installed besides [Docker Desktop](https://www.docker.com/products/docker-desktop/). With Docker Desktop running, from the repository folder:
+
+```powershell
+.\scripts\test.ps1                        # every test
+.\scripts\test.ps1 spec\round_spec.lua    # one file
+.\scripts\test.ps1 --filter "Blackjack"   # tests whose name matches
+```
+
+Two more scripts use the same Docker image:
+
+```powershell
+.\scripts\lint.ps1       # static analysis (luacheck): leaked globals, unused variables
+.\scripts\coverage.ps1   # which lines of the addon the tests run
+```
+
+Known bugs show up as *pending* tests, written for the correct behavior. To check that each one still fails, run `$env:AG_CHECK_KNOWN_BUGS = "1"; .\scripts\test.ps1`.
+
+On GitHub, every push and pull request runs the tests and the known-bug check, lints the code, and shows the coverage summary. See [docs/testing-plan.md](docs/testing-plan.md) for how the tests work.
+
 ## Support
 
 Aztec Gambling is free and always will be. If you enjoy it and want to support new updates and game modes, you can leave a donation — completely optional, and it never unlocks anything extra.

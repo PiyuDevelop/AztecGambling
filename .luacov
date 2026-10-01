@@ -1,0 +1,8 @@
+-- luacov configuration: which lines of the addon the tests run. Used by scripts/coverage.ps1.
+return {
+	statsfile = "luacov.stats.out",
+	reportfile = "luacov.report.out",
+	-- Only the addon's own files ("AztecGambling.lua" is "AztecGambling" here),
+	-- not the libraries or the tests
+	include = { "^AztecGambling$", "^AG%w+$" },
+}

@@ -37,11 +37,51 @@ Code review done against commit `1fe80e8`. Line numbers refer to that commit and
 
 - [ ] **7. The custom channel (`/ag join`) is half-finished** — [AztecGambling.lua:81](../AztecGambling.lua#L81), [AGCommon.lua:75](../AGCommon.lua#L75)
   - **Problem:** `/ag join` joins the channel, but that channel isn't in the chat channel dropdown (only Say, Party and Raid are), so games can't be run there. The channel is also left on `PLAYER_LEAVING_WORLD`, which fires on every loading screen, not just when logging out.
-  - **Fix:** decide whether to keep the feature. If kept, add the channel to the dropdown while the player is in it, and only leave it on logout (`PLAYER_LOGOUT`). If not, remove `/ag join` and `/ag leave`.
+  - **Problem 2:** `/ag join` with no channel name fails with a Lua error for a player without a guild: `GetCustomChannelName` passes the missing guild name to `string.gsub` ([AGCommon.lua:56](../AGCommon.lua#L56)). Found by the tests (`slash_spec.lua`).
+  - **Fix:** decide whether to keep the feature. If kept, add the channel to the dropdown while the player is in it, only leave it on logout (`PLAYER_LOGOUT`), and ask for a channel name when there's no guild. If not, remove `/ag join` and `/ag leave`.
 
 - [ ] **8. Leaked global variables** — for example [AGCommon.lua:103](../AGCommon.lua#L103), [AztecGambling.lua:605](../AztecGambling.lua#L605), [AGGameModes.lua:166](../AGGameModes.lua#L166)
   - **Problem:** variables such as `player`, `label`, `total`, `score`, `hand`, `command`, `command_args`, `winner`, `loser`, `player_score`, `channel_number`, `GAME_MODES`, `GAME_STAGES` and `on_mouse_down` are assigned without `local`, so they end up as game-wide globals. They can clash with other addons using the same names and cause "taint" errors in Blizzard's UI.
-  - **Fix:** declare them `local` where they're used.
+  - **Fix:** declare them `local` where they're used. The full list of today's leaks is `KNOWN_LEAKS` in `spec/globals_spec.lua`, found by running every part of the addon in the tests. Remove each name from it as it's fixed.
+
+- [ ] **9. An empty message is sent to chat when rolls start** — [AztecGambling.lua:304](../AztecGambling.lua#L304)
+  - **Problem:** `StartRolls()` sets `roll_msg = ""` and sends it with `MessageChat(roll_msg)` without ever filling it in. Every roll phase, tiebreakers included, sends an empty chat message. Found by the tests (`round_spec.lua`, pending test *never sends an empty chat message*).
+  - **Fix:** remove `roll_msg` and its `MessageChat` call.
+
+- [ ] **10. Rolls from players on another realm may be ignored** — [AztecGambling.lua:1107](../AztecGambling.lua#L1107), [AztecGambling.lua:1170](../AztecGambling.lua#L1170)
+  - **Problem:** joining stores the player's name without the realm (`Ambiguate(sender, "short")`), but `RollCallback` takes the name as written in the `/roll` system message. If that message shows players from other realms as `Name-Realm`, their roll never matches their entry and is ignored. **Needs to be confirmed in-game** with a player from a connected realm.
+  - **Fix:** if confirmed, run the name from the roll message through `Ambiguate(name, "short")` too.
+
+- [ ] **11. After a Blackjack tie, the companion window's Roll button rolls the wrong range** — [AztecGambling.lua:270](../AztecGambling.lua#L270)
+  - **Problem:**
+    - When Blackjack ends in a tie, the tiebreaker deals again from 1-21, but the host doesn't tell the companion windows.
+    - If anyone hit during the round, the companion windows are still on the hit range (1-10) from the last `AG_TURN_UPDATE`.
+    - A player who uses the companion window's Roll button rolls 1-10, the host ignores the roll as the wrong range, and the player times out.
+
+    Found by the tests (`protocol_spec.lua`).
+  - **Fix:** send the new range to the companion windows when `StartRolls()` deals again (for example, an `AG_TURN_UPDATE` with the 1-21 range).
+
+- [ ] **12. Joining the custom channel stops the casino window's position from being saved** — [AztecGambling.lua:1485](../AztecGambling.lua#L1485), [AGCommon.lua:75](../AGCommon.lua#L75)
+  - **Problem:**
+    - `ConstructUI` registers `PLAYER_LEAVING_WORLD` to save the window position.
+    - `JoinCustomChannel` registers the same event on the same object to leave the channel.
+    - AceEvent keeps only one handler per event per object, so after `/ag join` the position is no longer saved.
+
+    Found by the tests (`slash_spec.lua`).
+  - **Fix:** use a single `PLAYER_LEAVING_WORLD` handler that does both, or move leaving the channel to `PLAYER_LOGOUT` (see bug #7).
+
+- [ ] **13. Changing the chat channel during a round breaks joining and keeps the host listening** — [AztecGambling.lua:104](../AztecGambling.lua#L104), [AztecGambling.lua:118](../AztecGambling.lua#L118), [AztecGambling.lua:126](../AztecGambling.lua#L126)
+  - **Problem:** the chat channel dropdown stays active during a round. The new channel is applied right away, but the host only listens to the channel the round started in. For example, after switching from Party to Raid:
+    - the round is announced in Raid, but players typing `1` in Raid aren't heard;
+    - typing `1` in Party still works;
+    - when the round ends, the host stops listening to Raid instead of Party, so it keeps listening to Party for good.
+
+    Found by the tests (`round_spec.lua`).
+  - **Fix:** don't allow changing the channel while a round is open (disable the dropdown, or ignore `SelectChatChannel`). Alternatively, move the listening to the new channel when it changes.
+
+- [ ] **14. Status names both Countdown players on the first turn** — [AztecGambling.lua:359](../AztecGambling.lua#L359), [AztecGambling.lua:444](../AztecGambling.lua#L444)
+  - **Problem:** after the roll-off, both players are marked as still having to roll. On the first turn, **Status** says both still need to roll, although only the starting player can. Later turns are right. Found by the tests (`modes_flow_spec.lua`).
+  - **Fix:** mark only the player whose turn it is, or have `CheckRollsComplete` name only `turn_player` in turn-based modes.
 
 ## 2. New Features
 
@@ -59,7 +99,7 @@ Code review done against commit `1fe80e8`. Line numbers refer to that commit and
 - [ ] **Update the interface numbers in the `.toc` files.** `AztecGambling_Wrath.toc` (`30402`, Wrath Classic 3.4.2) no longer matches any live client: Wrath Classic became Cataclysm Classic in 2024 and then Mists of Pandaria Classic. `AztecGambling_Vanilla.toc` (`11403`) is from Classic Era 1.14.3, which is now on 1.15.x. To get a client's number: `/dump select(4, GetBuildInfo())`.
 - [ ] **Own version numbering.** For now, `## Version` follows the retail WoW version: `12.1.0` in all three `.toc` files, matching Interface `120100`. Later, switch to the addon's own version numbering.
 - [ ] **Automated releases.** A `.pkgmeta` plus a GitHub Action running the BigWigs packager can publish to CurseForge and Wago. The zip comes out with the right folder name (`AztecGambling`, not `AztecGambling-main`) and without `docs/` or `.github/`.
-- [ ] **Automated tests outside the game.** The game logic (joins, rolls, scoring, tiebreakers and the roll time limit) is plain Lua, so it can be tested without the game client. Changes like issue #4 could then be checked before testing them in-game.
+- [x] **Automated tests outside the game.** Done: see [testing-plan.md](testing-plan.md) and the *Running the Tests* section of the README. The original notes follow. The game logic (joins, rolls, scoring, tiebreakers and the roll time limit) is plain Lua, so it can be tested without the game client. Changes like issue #4 could then be checked before testing them in-game.
   - **Setup:** Lua 5.1 (the version WoW uses) with the [busted](https://lunarmodules.github.io/busted/) test framework, run in a Docker container so nothing has to be installed on Windows. Lua 5.4, which is what `winget` installs, doesn't work: the addon uses `table.getn`, which was removed after Lua 5.1.
   - **WoW API stubs** in a `spec/` folder:
     - `SendChatMessage` records each message, so tests can check what was announced.

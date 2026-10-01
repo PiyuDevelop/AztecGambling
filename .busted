@@ -1,0 +1,9 @@
+-- busted configuration: run every *_spec.lua under spec/, and let specs
+-- require their helpers from the repo root (require("spec.support.loader"))
+return {
+	default = {
+		ROOT = { "spec" },
+		pattern = "_spec",
+		lpath = "./?.lua;./?/init.lua",
+	},
+}
