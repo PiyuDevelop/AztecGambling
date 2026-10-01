@@ -32,6 +32,8 @@ Written against commit `68c327a`. Line numbers refer to that commit and may shif
 
 - **The addon's code doesn't change.** The tests describe the current behavior.
 - **Tests never lock in a bug.** When a test finds a bug, add it to [improvements.md](improvements.md) and write the test for the *correct* behavior as `pending("bug #N")`. It shows up in the report without failing the run, and it gets turned on when the bug is fixed.
+  - **Check that every `pending` test fails** against the current code: temporarily turn it into an `it`, run it, then turn it back. A `pending` test that passes doesn't document anything.
+- **Compare scores, not order, to check that one roll beats another.** Two rolls that wrongly tie can come out of a sort in either order, so a check on the order can pass by luck. Order checks are fine when every score is different.
 - **Every test starts clean:** fresh addon, fresh database, clock at zero, empty message logs.
 - **Work on a branch from `main`** (for example `tests`) and merge it before starting the next plan, so the bug fixes branch already has the tests.
 
@@ -161,11 +163,13 @@ assert.are.same(-443, ag.db.global.rankings["Piyu"])
   - a second registration of the same event replacing the first.
 
 ### Milestone 3: Rules in isolation
-- [ ] **`utils_spec.lua`:** `SplitString`, `sortedpairs` (with and without a sort function), `TableLength`, `CopyTable` and `deepcopy`.
-- [ ] **`game_modes_spec.lua`:** for every mode in `GAME_MODES`, check the roll range for a given bet (`init_game`), `roll_to_score`, `sort_rolls` (winner first, loser last) and `payout`.
+- [x] **`utils_spec.lua`:** `SplitString`, `sortedpairs` (with and without a sort function), `TableLength`, `CopyTable` and `deepcopy`.
+- [x] **`game_modes_spec.lua`:** for every mode in `GAME_MODES`, check the roll range for a given bet (`init_game`), `roll_to_score`, `sort_rolls` (winner first, loser last) and `payout`.
   - HiLo and Inverse pay the difference, and Curling pays the distance to the target.
-  - Big2s, LilOnes and Yahtzee pay the full bet.
-- [ ] **Yahtzee's broken cases** from bug #2 are written as `pending`, with the correct expected results.
+  - Big2s, LilOnes, Yahtzee, Countdown and Blackjack pay the full bet.
+  - Countdown has no `roll_to_score` or `sort_rolls`, because it's decided turn by turn; its flow is tested in Milestone 4.
+- [x] **Yahtzee's broken cases** from bug #2 are written as `pending`, with the correct expected results. Each one was checked to fail against the current code.
+  - A fourth `pending` entry, with no test, records the open decision on whether a 0 counts as 0 or 10.
 
 ### Milestone 4: Full rounds
 - [ ] **`round_spec.lua`:**
