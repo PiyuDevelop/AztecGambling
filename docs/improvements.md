@@ -43,6 +43,14 @@ Code review done against commit `1fe80e8`. Line numbers refer to that commit and
   - **Problem:** variables such as `player`, `label`, `total`, `score`, `hand`, `command`, `command_args`, `winner`, `loser`, `player_score`, `channel_number`, `GAME_MODES`, `GAME_STAGES` and `on_mouse_down` are assigned without `local`, so they end up as game-wide globals. They can clash with other addons using the same names and cause "taint" errors in Blizzard's UI.
   - **Fix:** declare them `local` where they're used.
 
+- [ ] **9. An empty message is sent to chat when rolls start** — [AztecGambling.lua:304](../AztecGambling.lua#L304)
+  - **Problem:** `StartRolls()` sets `roll_msg = ""` and sends it with `MessageChat(roll_msg)` without ever filling it in. Every roll phase, tiebreakers included, sends an empty chat message. Found by the tests (`round_spec.lua`, pending test *never sends an empty chat message*).
+  - **Fix:** remove `roll_msg` and its `MessageChat` call.
+
+- [ ] **10. Rolls from players on another realm may be ignored** — [AztecGambling.lua:1107](../AztecGambling.lua#L1107), [AztecGambling.lua:1170](../AztecGambling.lua#L1170)
+  - **Problem:** joining stores the player's name without the realm (`Ambiguate(sender, "short")`), but `RollCallback` takes the name as written in the `/roll` system message. If that message shows players from other realms as `Name-Realm`, their roll never matches their entry and is ignored. **Needs to be confirmed in-game** with a player from a connected realm.
+  - **Fix:** if confirmed, run the name from the roll message through `Ambiguate(name, "short")` too.
+
 ## 2. New Features
 
 - [ ] **Trade that fills in the gold automatically.** The original addon did this on the second click, with the trade window already open, using `SetTradeMoney` (see commit `e61f67f`, function `OpenTradeWinner`). PR #1 removed it. Needs testing to make sure it still works on the current client.

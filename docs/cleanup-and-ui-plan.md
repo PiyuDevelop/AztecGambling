@@ -51,6 +51,8 @@ Suggested order:
 - [ ] **#8 Leaked globals.** Add `local` where needed, and remove each name from the allow list in `globals_spec.lua` until it's empty.
 - [ ] **New: the roll time limit doesn't match the README.** The code gives 45 seconds ([AztecGambling.lua:9](../AztecGambling.lua#L9)); the README says "1 minute" and "60 seconds". Decide which is right and update the other.
 - [ ] **#4 Say mode outside instances.** It can't be tested outside the game: confirm it in-game first, then decide on the fix described in improvements.md.
+- [ ] **#9 An empty message is sent to chat when rolls start.** Remove `roll_msg` from `StartRolls`. Found by the tests.
+- [ ] **#10 Rolls from players on another realm may be ignored.** Confirm it in-game with a player from a connected realm. If confirmed, run the roll message's name through `Ambiguate`, and add a test with a `Name-Realm` roll.
 
 ## A2. Developer Test Command
 
@@ -110,7 +112,9 @@ This step changes where code lives, not how the game plays. **Every existing tes
 - [ ] **Build `GAME_MODES` and `GAME_STAGES` once.** Today they're rebuilt (and leak as globals) every time `SetGameMode` and `SetGameStage` run ([AztecGambling.lua:143](../AztecGambling.lua#L143), [AztecGambling.lua:168](../AztecGambling.lua#L168)).
 - [ ] **Remove dead code:**
   - `AG_MYSTERY` ([AGGameModes.lua:38](../AGGameModes.lua#L38));
-  - the unused `total_rolls` ([AztecGambling.lua:889](../AztecGambling.lua#L889)).
+  - the unused `total_rolls` ([AztecGambling.lua:889](../AztecGambling.lua#L889));
+  - `AztecGambling:GameResultsCallback` ([AztecGambling.lua:815](../AztecGambling.lua#L815)), which nothing registers. Only the companion window's own version is used.
+- [ ] **Fix `self.game.accepting_rolls = false`** in `CheckRollsComplete` ([AztecGambling.lua:450](../AztecGambling.lua#L450)). It should be `self.game.data.accepting_rolls`. Today it creates a field nobody reads, so the round keeps accepting rolls after everyone has rolled. Nothing visible breaks, because the chat events are unregistered right after.
 - [ ] **Replace `table.getn(t)` with `#t`.**
 
 ## Part A Done When

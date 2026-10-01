@@ -33,6 +33,7 @@ Written against commit `68c327a`. Line numbers refer to that commit and may shif
 - **The addon's code doesn't change.** The tests describe the current behavior.
 - **Tests never lock in a bug.** When a test finds a bug, add it to [improvements.md](improvements.md) and write the test for the *correct* behavior as `pending("bug #N")`. It shows up in the report without failing the run, and it gets turned on when the bug is fixed.
   - **Check that every `pending` test fails** against the current code: temporarily turn it into an `it`, run it, then turn it back. A `pending` test that passes doesn't document anything.
+- **Set globals in specs through `_G`** (`_G.RANDOM_ROLL_RESULT = ...`, or a helper that does it). busted gives each spec file its own globals, so a plain assignment there never reaches the addon or the helpers, and the test silently runs without it.
 - **Compare scores, not order, to check that one roll beats another.** Two rolls that wrongly tie can come out of a sort in either order, so a check on the order can pass by luck. Order checks are fine when every score is different.
 - **Every test starts clean:** fresh addon, fresh database, clock at zero, empty message logs.
 - **Work on a branch from `main`** (for example `tests`) and merge it before starting the next plan, so the bug fixes branch already has the tests.
@@ -172,25 +173,41 @@ assert.are.same(-443, ag.db.global.rankings["Piyu"])
   - A fourth `pending` entry, with no test, records the open decision on whether a 0 counts as 0 or 10.
 
 ### Milestone 4: Full rounds
-- [ ] **`round_spec.lua`:**
+- [x] **`helpers.lua`:** the host's and players' actions (set the bet, channel and mode, click the stage button, type in chat, `/roll`), the clock, and queries on what was sent.
+  - Chat events carry `Name-Realm`, as the game sends them, so the addon's `Ambiguate` is exercised.
+  - `roll()` reads the range from `roll_range`, which is what players are told to roll and the only thing that changes in Countdown's roll-off.
+- [x] **`round_spec.lua`:**
   - a complete HiLo round: welcome message, joins, *Last Call*, automatic start after 10 seconds, rolls, the result message and the rankings update;
   - the `AG_NEW_GAME` and `AG_END_GAME` addon messages and their fields;
-  - fewer than 2 players cancels the round;
+  - fewer than 2 players stops the rolls from starting, and the host can try again;
   - banned players can't join, a second `1` from the same player is ignored, and joins stop once rolling starts;
-  - rolls with the wrong range, and rolls from players who didn't join, are ignored.
-- [ ] **`tiebreaker_spec.lua`:**
+  - rolls with the wrong range, rolls from players who didn't join, and other system messages are ignored;
+  - the Status, PAY!, Trade, Reset, Enter and Roll! buttons;
+  - `pending` tests for bugs #1, #3, #5, #6 and #9.
+- [x] **`tiebreaker_spec.lua`:**
   - winners' tiebreaker;
   - losers' tiebreaker;
-  - everyone tied, including HiLo and Inverse (`everyone_tied_removes`);
-  - a tie inside a tiebreaker.
-- [ ] **`timeout_spec.lua`:** one test per row of the README's *Roll Time Limit* table, plus the warning 10 seconds before the end that lists who still has to roll.
-  - Use the `ROLL_TIME_LIMIT` constant ([AztecGambling.lua:9](../AztecGambling.lua#L9), currently 45 seconds) rather than hardcoding a number. The README says 60; that mismatch is tracked in the next plan.
-- [ ] **`modes_flow_spec.lua`:**
-  - **Countdown:** the roll-off, alternating turns, `AG_TURN_UPDATE`, and the player who rolls a 1 losing.
-  - **Blackjack:** `hit`, `stand`, busting, a natural 21 and the automatic stand at timeout.
+  - both, in order;
+  - a tie inside a tiebreaker;
+  - everyone tied.
+- [x] **`timeout_spec.lua`:** one test per row of the README's *Roll Time Limit* table, plus the warning before the end that lists who still has to roll, and each roll phase getting its own time limit.
+  - `ROLL_TIME_LIMIT` is a local variable, so the tests read the time left from the round's deadline instead of hardcoding 45 seconds.
+  - The README says 60; that mismatch is tracked in the next plan.
+- [x] **`modes_flow_spec.lua`:**
+  - **Countdown:** the roll-off (and its reroll on a tie), alternating turns, `AG_TURN_UPDATE`, out-of-turn rolls, the 2-player limit, and the player who rolls a 1 losing.
+  - **Blackjack:** `hit`, `stand`, busting, a natural 21, a hit reaching 21, and hits from players who are done.
   - **Curling:** the result against a fixed target.
   - **Yahtzee:** each player's hand announced before the payout.
-- [ ] **Spanish rolls (for bug #3):** copy the real `RANDOM_ROLL_RESULT` from a Spanish client (`/dump RANDOM_ROLL_RESULT`). Add a `pending` test that plays a round with it.
+  - **Inverse, Big2s and LilOnes:** a quick round each.
+- [x] **Spanish rolls (for bug #3):** `RANDOM_ROLL_RESULT` is `"%s tira los dados y obtiene %d (%d-%d)"` on both esMX and esES, taken from Wago Tools' GlobalStrings table. The `pending` test plays a round with it.
+- [x] **Checked that the tests catch real changes:** four deliberate changes to `AztecGambling.lua` were each caught by the expected test:
+  - several no-shows in a losers' tiebreaker treated as one;
+  - Last Call waiting 5 seconds instead of 10;
+  - the player limit ignored;
+  - the loser's payout recorded with the wrong sign.
+- **Found while writing these tests,** and added to [improvements.md](improvements.md):
+  - bug #9: an empty chat message is sent every time rolls start;
+  - bug #10: rolls from players on another realm may be ignored. It needs an in-game check.
 
 ### Milestone 5: Companion window, commands and globals
 - [ ] **`client_spec.lua`:** `AGClient` reads `AG_NEW_GAME`, `AG_TURN_UPDATE` and `AG_END_GAME` and shows the right text. Auto-show respects `auto_pop`, and the host's own messages don't open the host's companion window.
