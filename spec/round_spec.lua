@@ -2,6 +2,7 @@
 -- Last Call, rolls, the payout and the rankings, plus the buttons around
 -- a round (Status, PAY!, Trade, Reset, Enter, Roll!).
 local loader = require("spec.support.loader")
+local known_bug = require("spec.support.known_bug")
 local helpers = require("spec.support.helpers")
 
 describe("a round", function()
@@ -208,14 +209,14 @@ describe("a round", function()
 
 		-- Bug #3 in docs/improvements.md. RANDOM_ROLL_RESULT copied from the esMX
 		-- and esES clients (both use the same text).
-		pending("counts rolls from a Spanish client (bug #3)", function()
+		known_bug("counts rolls from a Spanish client (bug #3)", function()
 			game:set_roll_format("%s tira los dados y obtiene %d (%d-%d)")
 			play_hilo_round("Jayred", 480, "Piyu", 37)
 			assert.is_true(game:chat_contains("Piyu owes Jayred 443 gold!"))
 		end)
 
 		-- Bug #9 in docs/improvements.md
-		pending("never sends an empty chat message (bug #9)", function()
+		known_bug("never sends an empty chat message (bug #9)", function()
 			play_hilo_round("Jayred", 480, "Piyu", 37)
 			for _, text in ipairs(game:chat_texts()) do
 				assert.are_not.equal("", text)
@@ -267,13 +268,25 @@ describe("a round", function()
 			assert.are.same({}, game:rankings())
 		end)
 
+		it("cancels Last Call's automatic start with Reset", function()
+			game:set_bet("500")
+			game:click_stage()
+			game:say("Jayred", "1")
+			game:say("Piyu", "1")
+			game:click_stage() -- Last Call
+			game.host:ResetGame()
+			assert.has_no.errors(function() game:advance(10) end)
+			assert.is_false(game:chat_contains("Time to roll!"))
+			assert.are.equal("NewGame", game:stage())
+		end)
+
 		-- Bug #1 in docs/improvements.md
-		pending("does nothing when Trade is pressed before any round (bug #1)", function()
+		known_bug("does nothing when Trade is pressed before any round (bug #1)", function()
 			assert.has_no.errors(function() game.host:OpenTradeWinner() end)
 			assert.are.same({}, env.trades)
 		end)
 
-		pending("opens a trade with the loser for the player who won (bug #1)", function()
+		known_bug("opens a trade with the loser for the player who won (bug #1)", function()
 			env = loader.load({ player_name = "Jayred" })
 			game = helpers.new(env)
 			play_hilo_round("Jayred", 480, "Piyu", 37)
@@ -282,7 +295,7 @@ describe("a round", function()
 		end)
 
 		-- Bug #5 in docs/improvements.md
-		pending("tells companion windows the round was reset (bug #5)", function()
+		known_bug("tells companion windows the round was reset (bug #5)", function()
 			game:start_round({ players = { "Jayred", "Piyu" } })
 			local sent = #env.comm_sent
 			game.host:ResetGame()
@@ -290,17 +303,49 @@ describe("a round", function()
 		end)
 	end)
 
+	-- Bug #13 in docs/improvements.md: the host can change the chat channel
+	-- while a round is open. These pass whether the fix locks the dropdown
+	-- during a round or moves the listening to the new channel.
+	describe("when the host changes the chat channel during a round", function()
+		before_each(function()
+			game:set_channel("PARTY")
+			game:set_bet("500")
+			game:click_stage()
+			game:say("Jayred", "1")
+			game:set_channel("RAID")
+		end)
+
+		known_bug("hears players in the channel where the round is announced (bug #13)", function()
+			game:click_stage() -- Last Call, announced in the round's channel
+			local announced_in = env.chat[#env.chat].chat_type
+			env.fire_event("CHAT_MSG_" .. announced_in, "1", "Piyu-Tichondrius")
+			assert.are.same({ "Jayred", "Piyu" }, game:joined_players())
+		end)
+
+		known_bug("stops listening to every chat channel when the round ends (bug #13)", function()
+			game:say("Piyu", "1")
+			env.fire_event("CHAT_MSG_PARTY", "1", "Piyu-Tichondrius")
+			game:click_stage()
+			game:click_stage()
+			game:roll("Jayred", 480)
+			game:roll("Piyu", 37)
+			for _, event in ipairs({ "CHAT_MSG_PARTY", "CHAT_MSG_PARTY_LEADER", "CHAT_MSG_RAID", "CHAT_MSG_RAID_LEADER" }) do
+				assert.is_false(env.is_event_registered(event, game.host), event)
+			end
+		end)
+	end)
+
 	-- Bug #6 in docs/improvements.md: an invalid bet should stop the round
 	-- from starting and tell the host, instead of being used or replaced silently
 	describe("the bet", function()
-		pending("refuses a bet of 0 and tells the host (bug #6)", function()
+		known_bug("refuses a bet of 0 and tells the host (bug #6)", function()
 			game:set_bet("0")
 			game:click_stage()
 			assert.is_false(game:chat_contains("now in session"))
 			assert.is_true(#env.prints > 0)
 		end)
 
-		pending("refuses a bet that isn't a number and tells the host (bug #6)", function()
+		known_bug("refuses a bet that isn't a number and tells the host (bug #6)", function()
 			game:set_bet("lots")
 			game:click_stage()
 			assert.is_false(game:chat_contains("now in session"))

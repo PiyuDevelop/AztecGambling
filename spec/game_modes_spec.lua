@@ -2,6 +2,7 @@
 -- a bet, scoring, who wins and who loses, and how much gets paid. Full rounds
 -- with joins, timers and tiebreakers are in the round specs.
 local loader = require("spec.support.loader")
+local known_bug = require("spec.support.known_bug")
 
 -- A round as the game logic keeps it: the bet as typed in the gold box
 local function new_game(bet)
@@ -183,17 +184,17 @@ describe("game modes", function()
 			return AG_YAHTZEE.roll_to_score(roll) > AG_YAHTZEE.roll_to_score(other_roll)
 		end
 
-		pending("ranks any pair over any high card (bug #2)", function()
+		known_bug("ranks any pair over any high card (bug #2)", function()
 			assert.is_true(beats(11234, 12389), "a pair of 1s should beat 9 high")
 		end)
 
-		pending("ranks hands of the same kind by their dice (bug #2)", function()
+		known_bug("ranks hands of the same kind by their dice (bug #2)", function()
 			assert.is_true(beats(99992, 22229), "four 9s should beat four 2s")
 			assert.is_true(beats(99912, 22219), "three 9s should beat three 2s")
 			assert.is_true(beats(99922, 22299), "a full house of 9s over 2s should beat 2s over 9s")
 		end)
 
-		pending("never lets two pairs with 0s tie three of a kind (bug #2)", function()
+		known_bug("never lets two pairs with 0s tie three of a kind (bug #2)", function()
 			assert.is_true(beats(11123, 90098), "three of a kind should beat two pairs")
 		end)
 

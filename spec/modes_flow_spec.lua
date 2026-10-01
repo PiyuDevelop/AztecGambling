@@ -2,6 +2,7 @@
 -- (Countdown's turns, Blackjack's hit or stand) and the ones that announce
 -- extra results (Curling, Yahtzee).
 local loader = require("spec.support.loader")
+local known_bug = require("spec.support.known_bug")
 local helpers = require("spec.support.helpers")
 
 describe("playing", function()
@@ -83,6 +84,29 @@ describe("playing", function()
 			assert.is_true(game:chat_contains("Piyu rolled higher and goes first!"))
 		end)
 
+		it("names only the player whose turn it is with Status, after the first turn", function()
+			start()
+			game:roll("Jayred", 70)
+			game:roll("Piyu", 30)
+			game:roll("Jayred", 200)
+			local mark = game:mark()
+			game:click_stage() -- Status
+			assert.is_true(game:chat_has_line("Player: Piyu still needs to roll", mark))
+			assert.is_false(game:chat_contains("Jayred still needs", mark))
+		end)
+
+		-- Bug #14 in docs/improvements.md: after the roll-off both players are
+		-- marked as still having to roll, so Status names both on the first turn
+		known_bug("names only the player whose turn it is with Status, on the first turn too (bug #14)", function()
+			start()
+			game:roll("Jayred", 70)
+			game:roll("Piyu", 30)
+			local mark = game:mark()
+			game:click_stage() -- Status
+			assert.is_true(game:chat_has_line("Player: Jayred still needs to roll", mark))
+			assert.is_false(game:chat_contains("Piyu still needs", mark))
+		end)
+
 		it("needs exactly two players", function()
 			game:set_mode("Countdown")
 			game:set_bet("500")
@@ -154,6 +178,34 @@ describe("playing", function()
 			game:roll("Jayred", 6)
 			assert.is_true(game:chat_contains("Jayred drew a 6 for 21 - BLACKJACK!"))
 			assert.is_false(game.host.game.data.blackjack_active.Jayred)
+		end)
+
+		it("deals a new hand from 1-21 when the hands tie", function()
+			deal({ "Jayred", 15, "Piyu", 18 })
+			game:say("Jayred", "hit")
+			game:roll("Jayred", 3)
+			game:say("Jayred", "stand")
+			game:say("Piyu", "stand") -- 18 against 18
+			assert.is_true(game:chat_contains("The Winners Bracket! High Tiebreaker:"))
+			assert.are.equal("(1-21)", game.host.game.data.roll_range)
+			assert.is_false(game.host.game.data.dealt)
+
+			game:roll("Jayred", 20)
+			game:roll("Piyu", 17)
+			assert.are.equal(2, game:count_chat(AG_MESSAGES.DEALT))
+			game:say("Jayred", "stand")
+			game:say("Piyu", "stand")
+			assert.is_true(game:chat_contains("Piyu owes Jayred 500 gold!"))
+		end)
+
+		it("lists who still has to hit or stand with Status", function()
+			deal({ "Jayred", 21, "Piyu", 15, "Zed", 18 })
+			game:say("Zed", "stand")
+			local mark = game:mark()
+			game:click_stage() -- Status
+			assert.is_true(game:chat_has_line("Player: Piyu still needs to hit or stand", mark))
+			assert.is_false(game:chat_contains("Jayred still needs", mark))
+			assert.is_false(game:chat_contains("Zed still needs", mark))
 		end)
 
 		it("ignores hit and stand from a player who is already done", function()

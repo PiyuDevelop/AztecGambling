@@ -70,6 +70,19 @@ Code review done against commit `1fe80e8`. Line numbers refer to that commit and
     Found by the tests (`slash_spec.lua`).
   - **Fix:** use a single `PLAYER_LEAVING_WORLD` handler that does both, or move leaving the channel to `PLAYER_LOGOUT` (see bug #7).
 
+- [ ] **13. Changing the chat channel during a round breaks joining and keeps the host listening** — [AztecGambling.lua:104](../AztecGambling.lua#L104), [AztecGambling.lua:118](../AztecGambling.lua#L118), [AztecGambling.lua:126](../AztecGambling.lua#L126)
+  - **Problem:** the chat channel dropdown stays active during a round. The new channel is applied right away, but the host only listens to the channel the round started in. For example, after switching from Party to Raid:
+    - the round is announced in Raid, but players typing `1` in Raid aren't heard;
+    - typing `1` in Party still works;
+    - when the round ends, the host stops listening to Raid instead of Party, so it keeps listening to Party for good.
+
+    Found by the tests (`round_spec.lua`).
+  - **Fix:** don't allow changing the channel while a round is open (disable the dropdown, or ignore `SelectChatChannel`). Alternatively, move the listening to the new channel when it changes.
+
+- [ ] **14. Status names both Countdown players on the first turn** — [AztecGambling.lua:359](../AztecGambling.lua#L359), [AztecGambling.lua:444](../AztecGambling.lua#L444)
+  - **Problem:** after the roll-off, both players are marked as still having to roll. On the first turn, **Status** says both still need to roll, although only the starting player can. Later turns are right. Found by the tests (`modes_flow_spec.lua`).
+  - **Fix:** mark only the player whose turn it is, or have `CheckRollsComplete` name only `turn_player` in turn-based modes.
+
 ## 2. New Features
 
 - [ ] **Trade that fills in the gold automatically.** The original addon did this on the second click, with the trade window already open, using `SetTradeMoney` (see commit `e61f67f`, function `OpenTradeWinner`). PR #1 removed it. Needs testing to make sure it still works on the current client.

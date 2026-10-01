@@ -1,6 +1,7 @@
 -- The /ag slash commands, the window toggling they share with the minimap
 -- button, and the custom gambling channel.
 local loader = require("spec.support.loader")
+local known_bug = require("spec.support.known_bug")
 
 describe("/ag", function()
 	local env
@@ -136,11 +137,11 @@ describe("/ag", function()
 		end)
 
 		-- Bug #7 in docs/improvements.md
-		pending("doesn't fail for a player without a guild (bug #7)", function()
+		known_bug("doesn't fail for a player without a guild (bug #7)", function()
 			assert.has_no.errors(function() env.run_slash("ag", "join") end)
 		end)
 
-		pending("stays in the channel through loading screens, leaving it only on logout (bug #7)", function()
+		known_bug("stays in the channel through loading screens, leaving it only on logout (bug #7)", function()
 			env.run_slash("ag", "join AztecNight")
 			env.fire_event("PLAYER_LEAVING_WORLD")
 			assert.are.same({}, env.channels_left)
@@ -149,7 +150,7 @@ describe("/ag", function()
 		end)
 
 		-- Bug #12 in docs/improvements.md
-		pending("keeps saving the casino window's position after joining (bug #12)", function()
+		known_bug("keeps saving the casino window's position after joining (bug #12)", function()
 			env.run_slash("ag", "join AztecNight")
 			env.fire_event("PLAYER_LEAVING_WORLD")
 			assert.is_table(AztecGambling.db.global.ui_frame)

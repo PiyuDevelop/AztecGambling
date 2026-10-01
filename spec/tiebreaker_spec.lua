@@ -88,6 +88,22 @@ describe("tiebreakers", function()
 		assert.is_true(game:chat_contains("Zed owes Jayred 300 gold!"))
 	end)
 
+	it("narrows a losers' tiebreaker down to the players who tie for last again", function()
+		play({ "Jayred", 400, "Piyu", 100, "Zed", 100, "Kal", 100 })
+		assert.is_true(game:chat_lists_tiebreaker({ "Piyu", "Zed", "Kal" }))
+
+		local mark = game:mark()
+		game:roll("Piyu", 300)
+		game:roll("Zed", 50)
+		game:roll("Kal", 50)
+		assert.is_true(game:chat_lists_tiebreaker({ "Zed", "Kal" }, mark))
+		assert.are.same({ "Kal", "Zed" }, game:joined_players())
+
+		game:roll("Zed", 40)
+		game:roll("Kal", 20)
+		assert.is_true(game:chat_contains("Kal owes Jayred 300 gold!"))
+	end)
+
 	-- When everyone ties, the first round has no losing roll, so these only
 	-- check who wins and who pays
 	describe("when everyone ties", function()

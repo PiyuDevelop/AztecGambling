@@ -154,6 +154,14 @@ function Helpers:chat_contains(text, since)
 	return false
 end
 
+-- True if a chat message is exactly text
+function Helpers:chat_has_line(text, since)
+	for _, line in ipairs(self:chat_since(since or 0)) do
+		if line == text then return true end
+	end
+	return false
+end
+
 function Helpers:count_chat(text, since)
 	local count = 0
 	for _, line in ipairs(self:chat_since(since or 0)) do

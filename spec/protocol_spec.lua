@@ -3,6 +3,7 @@
 -- player were hosting. After each step, the companion window has to agree
 -- with the host on what to roll and how the round ended.
 local loader = require("spec.support.loader")
+local known_bug = require("spec.support.known_bug")
 local helpers = require("spec.support.helpers")
 
 describe("the host and the companion window", function()
@@ -68,7 +69,7 @@ describe("the host and the companion window", function()
 
 	-- Bug #11 in docs/improvements.md: a tie in Blackjack starts a new deal,
 	-- but only the host goes back to 1-21
-	pending("agree on what to roll when Blackjack deals again after a tie (bug #11)", function()
+	known_bug("agree on what to roll when Blackjack deals again after a tie (bug #11)", function()
 		game:start_round({ mode = "Blackjack", bet = "500", players = { "Jayred", "Piyu" } })
 		game:roll("Jayred", 15)
 		game:roll("Piyu", 18)
@@ -82,7 +83,7 @@ describe("the host and the companion window", function()
 	end)
 
 	-- Bug #5 in docs/improvements.md
-	pending("agree that there's no round after the host resets it (bug #5)", function()
+	known_bug("agree that there's no round after the host resets it (bug #5)", function()
 		game:start_round({ mode = "HiLo", bet = "500", players = { "Jayred", "Piyu" } })
 		sync()
 		host:ResetGame()

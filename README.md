@@ -109,7 +109,16 @@ The game logic is covered by automated tests that run outside the game, in Docke
 .\scripts\test.ps1 --filter "Blackjack"   # tests whose name matches
 ```
 
-The tests also run on GitHub on every push and pull request. Known bugs show up as *pending* tests, written for the correct behavior. See [docs/testing-plan.md](docs/testing-plan.md) for how the tests work.
+Two more scripts use the same Docker image:
+
+```powershell
+.\scripts\lint.ps1       # static analysis (luacheck): leaked globals, unused variables
+.\scripts\coverage.ps1   # which lines of the addon the tests run
+```
+
+Known bugs show up as *pending* tests, written for the correct behavior. To check that each one still fails, run `$env:AG_CHECK_KNOWN_BUGS = "1"; .\scripts\test.ps1`.
+
+On GitHub, every push and pull request runs the tests and the known-bug check, lints the code, and shows the coverage summary. See [docs/testing-plan.md](docs/testing-plan.md) for how the tests work.
 
 ## Support
 

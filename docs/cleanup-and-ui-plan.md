@@ -11,7 +11,7 @@ Written against commit `68c327a`. Line numbers refer to that commit and may shif
 
 ## Before You Start
 
-- [ ] **The testing plan is done:** the tests run locally and in CI, and every known bug is a `pending` test.
+- [x] **The testing plan is done:** the tests run locally and in CI, and every known bug that can be reproduced outside the game is a `known_bug` test.
 - [ ] **Link the repo into the game,** so each change can be tested with `/reload`. Move the installed copy out of `<WoW>\_retail_\Interface\AddOns\AztecGambling`, then replace it with a directory junction to the repo:
   ```
   mklink /J "<WoW>\_retail_\Interface\AddOns\AztecGambling" "C:\repos\WoWAddons\AztecGambling"
@@ -30,10 +30,12 @@ Written against commit `68c327a`. Line numbers refer to that commit and may shif
 ## A1. Bug Fixes, Test First
 
 For each bug:
-1. Turn its `pending` test on and watch it fail.
+1. Turn its `known_bug(...)` test into an `it(...)` and watch it fail.
 2. Fix the code.
 3. Watch the test pass.
 4. Check it once in-game with the current UI.
+
+CI checks that every remaining `known_bug` test still fails, so a bug fixed without turning its test on is caught.
 
 Suggested order:
 
@@ -48,12 +50,14 @@ Suggested order:
   - Check there's a game with a winner.
   - If you are the winner, trade with the loser instead.
   - The host and the companion window each have their own copy of this function ([AztecGambling.lua:1268](../AztecGambling.lua#L1268), [AGClient.lua:166](../AGClient.lua#L166)). Merge them into one shared function.
-- [ ] **#8 Leaked globals.** Add `local` where needed, and remove each name from the allow list in `globals_spec.lua` until it's empty.
+- [ ] **#8 Leaked globals.** Add `local` where needed, and remove each name from `KNOWN_LEAKS` in `globals_spec.lua` until it's empty. `scripts/lint.ps1` also lists the leaks in code the tests never run, such as `winner`, `loser` and `cash_winnings` in the dead `GameResultsCallback`.
 - [ ] **New: the roll time limit doesn't match the README.** The code gives 45 seconds ([AztecGambling.lua:9](../AztecGambling.lua#L9)); the README says "1 minute" and "60 seconds". Decide which is right and update the other.
 - [ ] **#4 Say mode outside instances.** It can't be tested outside the game: confirm it in-game first, then decide on the fix described in improvements.md.
 - [ ] **#9 An empty message is sent to chat when rolls start.** Remove `roll_msg` from `StartRolls`. Found by the tests.
 - [ ] **#10 Rolls from players on another realm may be ignored.** Confirm it in-game with a player from a connected realm. If confirmed, run the roll message's name through `Ambiguate`, and add a test with a `Name-Realm` roll.
 - [ ] **#11 After a Blackjack tie, the companion window rolls the wrong range.** Send the 1-21 range to the companion windows when the tiebreaker deals again. Found by the tests.
+- [ ] **#13 Changing the chat channel during a round** breaks joining in the new channel and leaves the host listening to the old one for good. Simplest fix: don't allow the change while a round is open. Found by the tests.
+- [ ] **#14 Status names both Countdown players on the first turn.** Found by the tests.
 
 ## A2. Developer Test Command
 
@@ -95,7 +99,7 @@ This step changes where code lives, not how the game plays. **Every existing tes
 - [ ] **Update the tests.**
   - Check the internal messages instead of calls on the UI stand-in.
   - The logic no longer calls the UI, so `ui_stub.lua` should be needed only for the tests that load the windows.
-- [ ] **Fix the overwritten `PLAYER_LEAVING_WORLD` handler** (bug #12 in improvements.md, with a `pending` test in `slash_spec.lua`).
+- [ ] **Fix the overwritten `PLAYER_LEAVING_WORLD` handler** (bug #12 in improvements.md, with a `known_bug` test in `slash_spec.lua`).
   - [AztecGambling.lua:1485](../AztecGambling.lua#L1485) registers it to save the window position.
   - [AGCommon.lua:75](../AGCommon.lua#L75) registers it on the same object to leave the custom channel.
   - AceEvent keeps one handler per event per object, so after `/ag join` the position stops being saved.
@@ -114,14 +118,21 @@ This step changes where code lives, not how the game plays. **Every existing tes
 - [ ] **Remove dead code:**
   - `AG_MYSTERY` ([AGGameModes.lua:38](../AGGameModes.lua#L38));
   - the unused `total_rolls` ([AztecGambling.lua:889](../AztecGambling.lua#L889));
-  - `AztecGambling:GameResultsCallback` ([AztecGambling.lua:815](../AztecGambling.lua#L815)), which nothing registers. Only the companion window's own version is used.
+  - `AztecGambling:GameResultsCallback` ([AztecGambling.lua:815](../AztecGambling.lua#L815)), which nothing registers. Only the companion window's own version is used;
+  - `PrintBanlist` ([AztecGambling.lua:1212](../AztecGambling.lua#L1212)), which no command calls, and `PrintTable` ([AGUtils.lua:27](../AGUtils.lua#L27));
+  - the second copy of the block that saves the payout rolls in `EvaluateScores` ([AztecGambling.lua:945](../AztecGambling.lua#L945)), which repeats the one at [AztecGambling.lua:930](../AztecGambling.lua#L930);
+  - the empty `if` branches in `EvaluateScores` that luacheck reports.
+
+  The test coverage report (`scripts/coverage.ps1`) shows these as lines that never run.
+- [ ] **Clear the rest of luacheck's warnings** (`scripts/lint.ps1`): unused variables, and the loop variable `digit` reused inside its own loop in Yahtzee's scoring.
 - [ ] **Fix `self.game.accepting_rolls = false`** in `CheckRollsComplete` ([AztecGambling.lua:450](../AztecGambling.lua#L450)). It should be `self.game.data.accepting_rolls`. Today it creates a field nobody reads, so the round keeps accepting rolls after everyone has rolled. Nothing visible breaks, because the chat events are unregistered right after.
 - [ ] **Replace `table.getn(t)` with `#t`.**
 
 ## Part A Done When
 
-- [ ] Every `pending` test is turned on and passing.
-- [ ] The allow list in `globals_spec.lua` is empty.
+- [ ] Every `known_bug` test is an `it` and passing, except the bugs that need an in-game check first.
+- [ ] `KNOWN_LEAKS` in `globals_spec.lua` is empty.
+- [ ] `scripts/lint.ps1` reports no warnings for the addon. Then make CI's *Lint the addon* step blocking, by removing its `continue-on-error`.
 - [ ] The game logic doesn't call or read any window.
 - [ ] A round of every mode plays the same in-game as before.
 - [ ] The fixes are merged into `main` and released.

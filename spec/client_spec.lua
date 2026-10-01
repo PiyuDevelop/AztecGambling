@@ -2,6 +2,7 @@
 -- it learns about the round from the host's addon messages and offers Enter,
 -- Roll and Trade.
 local loader = require("spec.support.loader")
+local known_bug = require("spec.support.known_bug")
 local UIStub = require("spec.support.ui_stub")
 
 describe("the companion window", function()
@@ -123,12 +124,12 @@ describe("the companion window", function()
 		end)
 
 		-- Bug #1 in docs/improvements.md
-		pending("does nothing when pressed before any round (bug #1)", function()
+		known_bug("does nothing when pressed before any round (bug #1)", function()
 			assert.has_no.errors(function() client:OpenTradeWinner() end)
 			assert.are.same({}, env.trades)
 		end)
 
-		pending("opens a trade with the loser for the player who won (bug #1)", function()
+		known_bug("opens a trade with the loser for the player who won (bug #1)", function()
 			from_host("AG_NEW_GAME", "1 500 500 PARTY")
 			from_host("AG_END_GAME", "Jayred Piyu 443")
 			client:OpenTradeWinner()

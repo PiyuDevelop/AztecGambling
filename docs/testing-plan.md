@@ -31,8 +31,10 @@ Written against commit `68c327a`. Line numbers refer to that commit and may shif
 ## 3. Rules for This Phase
 
 - **The addon's code doesn't change.** The tests describe the current behavior.
-- **Tests never lock in a bug.** When a test finds a bug, add it to [improvements.md](improvements.md) and write the test for the *correct* behavior as `pending("bug #N")`. It shows up in the report without failing the run, and it gets turned on when the bug is fixed.
-  - **Check that every `pending` test fails** against the current code: temporarily turn it into an `it`, run it, then turn it back. A `pending` test that passes doesn't document anything.
+- **Tests never lock in a bug.** When a test finds a bug, add it to [improvements.md](improvements.md) and write the test for the *correct* behavior with `known_bug("... (bug #N)", function() ... end)` (`spec/support/known_bug.lua`).
+  - It's reported as pending, so the run stays green, and it becomes an `it` when the bug is fixed.
+  - **Every `known_bug` test must fail against the current code**, or it doesn't document anything. With `AG_CHECK_KNOWN_BUGS=1`, each one runs and must fail. CI checks this on every push. Locally: `$env:AG_CHECK_KNOWN_BUGS = "1"; .\scripts\test.ps1`.
+  - Plain `pending` is left for open decisions with no test yet, such as how a 0 counts in Yahtzee.
 - **Set globals in specs through `_G`** (`_G.RANDOM_ROLL_RESULT = ...`, or a helper that does it). busted gives each spec file its own globals, so a plain assignment there never reaches the addon or the helpers, and the test silently runs without it.
 - **Compare scores, not order, to check that one roll beats another.** Two rolls that wrongly tie can come out of a sort in either order, so a check on the order can pass by luck. Order checks are fine when every score is different.
 - **Every test starts clean:** fresh addon, fresh database, clock at zero, empty message logs.
@@ -44,32 +46,41 @@ Written against commit `68c327a`. Line numbers refer to that commit and may shif
 |---|---|
 | **Lua 5.1** | The Lua version WoW uses. Lua 5.4, which `winget` installs, doesn't work: the addon calls `table.getn`, which was removed after 5.1. |
 | **[busted](https://lunarmodules.github.io/busted/)** | The usual Lua test framework: `describe`/`it`, assertions, `pending`, stubs and spies. |
-| **Docker** | Runs Lua 5.1 and busted without installing anything on Windows, and uses the same environment locally and in CI. Docker Desktop is already installed and has to be running. |
-| **GitHub Actions** | Runs the tests on every push and pull request. |
+| **[luacheck](https://luacheck.readthedocs.io)** | Static analysis. It finds leaked globals and unused variables even in code the tests never run. |
+| **[luacov](https://lunarmodules.github.io/luacov/)** | Test coverage: which lines of the addon the tests run, and which they never do. |
+| **Docker** | Runs Lua 5.1 and the three tools above without installing anything on Windows, and uses the same environment locally and in CI. Docker Desktop is already installed and has to be running. |
+| **GitHub Actions** | Runs the tests, the known-bug check and luacheck on every push and pull request, and shows the coverage summary. |
 
 ## 5. Files
 
 ```
 AztecGambling/
 ├── .busted                  -- busted configuration
+├── .luacheckrc              -- luacheck configuration
+├── .luacov                  -- luacov configuration
+├── .gitignore               -- leaves out the coverage output files
 ├── spec/
-│   ├── Dockerfile           -- Lua 5.1 + busted image
+│   ├── Dockerfile           -- Lua 5.1 + busted + luacheck + luacov image
 │   ├── support/
 │   │   ├── clock.lua        -- fake clock and timer queue
 │   │   ├── wow_api.lua      -- WoW API stubs
 │   │   ├── ace_stubs.lua    -- LibStub and minimal Ace3 / LibDBIcon stand-ins
 │   │   ├── ui_stub.lua      -- stand-in object for AceGUI widgets
 │   │   ├── loader.lua       -- loads the addon files in .toc order and initializes them
-│   │   └── helpers.lua      -- actions (join, roll, wait) and log queries
+│   │   ├── helpers.lua      -- actions (join, roll, wait), the fake network and log queries
+│   │   ├── known_bug.lua    -- known_bug(): pending tests that must still fail
+│   │   └── exercise.lua     -- runs as much of the addon as possible (for globals_spec)
 │   └── *_spec.lua           -- the tests
 ├── scripts/
-│   └── test.ps1             -- builds the image and runs the tests from Windows
+│   ├── test.ps1             -- builds the image and runs the tests from Windows
+│   ├── lint.ps1             -- runs luacheck
+│   └── coverage.ps1         -- runs the tests with luacov and prints the coverage summary
 └── .github/workflows/
     └── tests.yml            -- CI
 ```
 
 - **`spec/` never goes into the release zip.** [release.yml](../.github/workflows/release.yml) only copies the `.toc`, `*.lua`, `libs` and `LICENSE`.
-- **Add `spec/**`, `scripts/**`, `.busted` and `.github/workflows/tests.yml` to the `paths-ignore` list in `release.yml`.** Otherwise, a push that only changes tests creates a new release.
+- **The test files are in the `paths-ignore` list of `release.yml`:** `spec/**`, `scripts/**`, `.busted`, `.luacheckrc`, `.luacov`, `.gitignore` and `.github/workflows/tests.yml`. Otherwise, a push that only changes tests would create a new release.
 
 ## 6. The Test Environment
 
@@ -232,9 +243,32 @@ assert.are.same(-443, ag.db.global.rankings["Piyu"])
   - bug #12: joining the custom channel stops the window position from being saved;
   - `/ag join` without a channel name fails for a player with no guild (added to bug #7).
 
+### Milestone 6: Filling the gaps
+Added after the first five milestones, to find what the tests still missed.
+
+- [x] **`known_bug()`** replaces `pending` for known bugs (see *Rules for This Phase*), and CI checks that each one still fails. The 17 existing bug tests were converted; only the open decision about 0s in Yahtzee stays `pending`.
+- [x] **luacheck** (`.luacheckrc`, `scripts/lint.ps1`):
+  - **The tests must be clean**, and CI blocks on it.
+  - **The addon has 136 warnings** (leaked globals, unused variables, empty `if` branches, a reused loop variable). CI reports them without blocking until Part A of the cleanup plan clears them.
+  - Unlike `globals_spec`, it also finds leaks in code that never runs, such as `winner`, `loser` and `cash_winnings` in the dead `GameResultsCallback`.
+- [x] **luacov** (`.luacov`, `scripts/coverage.ps1`): the tests run **92.8%** of the addon's lines. CI shows the summary on each run's page. What never runs:
+  - the current UI (the countdown bar widget, right-click and tooltip handlers), which the redesign replaces;
+  - dead code (`AG_MYSTERY`, `GameResultsCallback`, `PrintBanlist`, `PrintTable`, a duplicated block in `EvaluateScores`);
+  - the custom channel's `AG` option, waiting on the bug #7 decision;
+  - Roulette, which isn't offered;
+  - how 0s score in Yahtzee, waiting on a decision.
+- [x] **New tests** for gaps found by reviewing the code and by the coverage report:
+  - changing the chat channel during a round (bug #13, found here);
+  - Blackjack dealing again after a tie;
+  - the time warning in Countdown and in Blackjack's hit or stand phase;
+  - Status in Countdown (bug #14 on the first turn, found here) and in Blackjack;
+  - Reset during Last Call;
+  - a losers' tiebreaker narrowing down to the players who tie for last again;
+  - a winners' tiebreaker that follows a losers' tiebreaker decided by timeout.
+
 ## 8. Done When
 
 - [x] `scripts/test.ps1` runs every test locally, and CI runs them on every push and pull request. CI was confirmed on the first push of the `tests` branch (Actions run 36808502636).
-- [x] Every milestone above is complete, with every known bug that can be reproduced outside the game written as a `pending` test. Bugs #4 and #10 need an in-game check first.
+- [x] Every milestone above is complete, with every known bug that can be reproduced outside the game written as a `known_bug` test. Bugs #4 and #10 need an in-game check first.
 - [x] The README has a short *Running the Tests* section for contributors.
 - [x] The *Automated tests outside the game* item in [improvements.md](improvements.md) is checked off.
