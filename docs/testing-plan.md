@@ -234,7 +234,7 @@ assert.are.same(-443, ag.db.global.rankings["Piyu"])
 
 ## 8. Done When
 
-- [ ] `scripts/test.ps1` runs every test locally, and CI runs them on every push and pull request. Locally: done. CI: still to be confirmed after the first push to GitHub.
+- [x] `scripts/test.ps1` runs every test locally, and CI runs them on every push and pull request. CI was confirmed on the first push of the `tests` branch (Actions run 36808502636).
 - [x] Every milestone above is complete, with every known bug that can be reproduced outside the game written as a `pending` test. Bugs #4 and #10 need an in-game check first.
 - [x] The README has a short *Running the Tests* section for contributors.
 - [x] The *Automated tests outside the game* item in [improvements.md](improvements.md) is checked off.
