@@ -1,5 +1,6 @@
-# Runs the addon's tests (Lua 5.1 + busted) on every push and pull request,
-# in the same Docker image scripts/test.ps1 uses locally.
+# Runs the addon's tests (Lua 5.1 + busted) on every push and pull request, in
+# the same Docker image the scripts in scripts/ use locally. Also checks that
+# every known bug still fails, lints with luacheck, and shows test coverage.
 
 name: Tests
 
@@ -17,4 +18,25 @@ jobs:
         run: docker build --tag aztecgambling-tests spec
 
       - name: Run the tests
-        run: docker run --rm --volume "$PWD:/addon" aztecgambling-tests
+        run: docker run --rm --volume "$PWD:/addon" aztecgambling-tests busted --coverage
+
+      # Each known_bug test must still fail. One that passes was fixed (turn it
+      # into an it()) or doesn't reproduce its bug.
+      - name: Check that every known bug still fails
+        run: docker run --rm --env AG_CHECK_KNOWN_BUGS=1 --volume "$PWD:/addon" aztecgambling-tests busted
+
+      - name: Lint the tests
+        run: docker run --rm --volume "$PWD:/addon" aztecgambling-tests luacheck spec --codes
+
+      # Report only for now: the addon has known warnings (leaked globals, unused
+      # variables) that Part A of docs/cleanup-and-ui-plan.md fixes. Make this
+      # step blocking once it's clean.
+      - name: Lint the addon (report only)
+        continue-on-error: true
+        run: docker run --rm --volume "$PWD:/addon" aztecgambling-tests luacheck AztecGambling.lua AGClient.lua AGCommon.lua AGGameModes.lua AGMessages.lua AGUtils.lua --codes
+
+      - name: Coverage summary
+        run: |
+          docker run --rm --volume "$PWD:/addon" aztecgambling-tests sh -c "luacov && sed -n '/^Summary/,\$p' luacov.report.out" > coverage.txt
+          cat coverage.txt
+          { echo '### Test coverage'; echo '```'; cat coverage.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"

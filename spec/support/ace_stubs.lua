@@ -133,7 +133,7 @@ function AceStubs.install(env)
 	function AceAddon:NewAddon(name, ...)
 		assert(env.addons[name] == nil, "addon already exists: " .. name)
 		local addon = { name = name }
-		function addon:GetName() return self.name end
+		addon.GetName = function(target) return target.name end
 		for index = 1, select("#", ...) do
 			_G.LibStub(select(index, ...)):Embed(addon)
 		end

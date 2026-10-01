@@ -6,6 +6,9 @@
 #   .\scripts\test.ps1 spec\round_spec.lua  # one file
 #   .\scripts\test.ps1 --filter "HiLo"      # tests whose name matches
 # Any arguments are passed straight to busted.
+#
+# Known bugs are reported as pending. To check that each one still fails:
+#   $env:AG_CHECK_KNOWN_BUGS = "1"; .\scripts\test.ps1; Remove-Item Env:AG_CHECK_KNOWN_BUGS
 
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
@@ -18,5 +21,6 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 # argument as an array - splatting a lone string would pass it one character at a time
 $bustedArgs = @($args | ForEach-Object { "$_" -replace "\\", "/" })
 
-docker run --rm --volume "${root}:/addon" $image busted @bustedArgs
+# --env without a value passes AG_CHECK_KNOWN_BUGS only when it's set here
+docker run --rm --env AG_CHECK_KNOWN_BUGS --volume "${root}:/addon" $image busted @bustedArgs
 exit $LASTEXITCODE

@@ -22,6 +22,9 @@ on:
       - "spec/**"
       - "scripts/**"
       - ".busted"
+      - ".luacheckrc"
+      - ".luacov"
+      - ".gitignore"
       - ".github/workflows/tests.yml"
 
 permissions:
