@@ -17,7 +17,7 @@ local REALM = "Tichondrius"
 local CHANNEL_INDEX = { RAID = 1, PARTY = 2, GUILD = 3, SAY = 4 }
 
 function Helpers.new(env)
-	return setmetatable({ env = env, host = env.host }, Helpers)
+	return setmetatable({ env = env, host = env.host, client = env.client }, Helpers)
 end
 
 -- Host actions
@@ -180,6 +180,20 @@ function Helpers:chat_lists_tiebreaker(players, since)
 		if matches then return true end
 	end
 	return false
+end
+
+-- The fake network: delivers every addon message sent since the last call to
+-- the addons listening for it, as if sent by sender. The default sender is
+-- the logged-in player, because the game also delivers group addon messages
+-- back to whoever sent them. Pass another name to play a round hosted by
+-- someone else.
+function Helpers:deliver_addon_messages(sender)
+	self.delivered = self.delivered or 0
+	while self.delivered < #self.env.comm_sent do
+		self.delivered = self.delivered + 1
+		local message = self.env.comm_sent[self.delivered]
+		self.env.deliver_comm(message.prefix, message.text, message.distribution, sender or self.env.player_name)
+	end
 end
 
 -- Texts of the addon messages sent with this prefix, oldest first

@@ -210,16 +210,31 @@ assert.are.same(-443, ag.db.global.rankings["Piyu"])
   - bug #10: rolls from players on another realm may be ignored. It needs an in-game check.
 
 ### Milestone 5: Companion window, commands and globals
-- [ ] **`client_spec.lua`:** `AGClient` reads `AG_NEW_GAME`, `AG_TURN_UPDATE` and `AG_END_GAME` and shows the right text. Auto-show respects `auto_pop`, and the host's own messages don't open the host's companion window.
-- [ ] **`protocol_spec.lua`:** a fake network passes every `SendCommMessage` from the host to the companion's registered callbacks. After each step of a round, the companion's `current_game` has to match the host's game.
-- [ ] **`slash_spec.lua`:** `/ag ban`, `unban`, `resetStats`, `resetBans` and `auto` change the database as expected, and an unknown command prints the help hint.
-- [ ] **`globals_spec.lua`:** load the addon in a clean environment and compare the globals it creates against an allow list.
-  - The list starts with today's leaked globals, so the test passes now.
-  - Fixing bug #8 then means removing names from the list, and a new leak fails the test right away.
+- [x] **`client_spec.lua`:** `AGClient` reads `AG_NEW_GAME`, `AG_TURN_UPDATE` and `AG_END_GAME` and shows the right text.
+  - Auto-show respects `auto_pop`, and the host's own messages don't open the host's companion window.
+  - Covers Roll, Enter and Trade, and how rolls are shared in Guild and Say rounds.
+  - Bug #1 is written as `pending` tests for the companion window too.
+- [x] **`protocol_spec.lua`:** `helpers:deliver_addon_messages()` passes every `SendCommMessage` from the host to the companion window's callbacks, as if another player were hosting. After each step of a HiLo, Countdown and Blackjack round, the companion window has to agree with the host on what to roll and how the round ended. Pending tests for bugs #5 and #11.
+- [x] **`slash_spec.lua`:**
+  - `/ag ban`, `unban`, `resetBans`, `stats`, `resetStats`, `auto`, `debug` and `help`, and an unknown command;
+  - the `/ag` window cycle and `/agm`;
+  - saving the window position;
+  - `join` and `leave`.
+
+  Pending tests for bugs #7 and #12.
+- [x] **`globals_spec.lua`:** runs as much of the addon as possible (`spec/support/exercise.lua`: a round of every mode, tiebreakers, timeouts, every button and slash command, the companion window). Then it compares the globals created against two lists:
+  - **`INTENDED`:** the addon objects, their SavedVariables, and the tables the files share.
+  - **`KNOWN_LEAKS`:** today's 21 leaked globals.
+
+  A new leak fails the first test. A leak that gets fixed fails the second until it's removed from the list, so the list stays accurate until it's empty.
+- **Found while writing these tests,** and added to [improvements.md](improvements.md):
+  - bug #11: after a Blackjack tie, the companion window rolls the wrong range;
+  - bug #12: joining the custom channel stops the window position from being saved;
+  - `/ag join` without a channel name fails for a player with no guild (added to bug #7).
 
 ## 8. Done When
 
-- [ ] `scripts/test.ps1` runs every test locally, and CI runs them on every push and pull request.
-- [ ] Every milestone above is complete, with every known bug written as a `pending` test.
-- [ ] The README gets a short *Running the tests* section for contributors.
-- [ ] The *Automated tests outside the game* item in [improvements.md](improvements.md) is checked off.
+- [ ] `scripts/test.ps1` runs every test locally, and CI runs them on every push and pull request. Locally: done. CI: still to be confirmed after the first push to GitHub.
+- [x] Every milestone above is complete, with every known bug that can be reproduced outside the game written as a `pending` test. Bugs #4 and #10 need an in-game check first.
+- [x] The README has a short *Running the Tests* section for contributors.
+- [x] The *Automated tests outside the game* item in [improvements.md](improvements.md) is checked off.

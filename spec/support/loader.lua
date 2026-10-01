@@ -42,16 +42,34 @@ end
 
 -- The stand-ins alone, without the addon: for testing the stand-ins themselves.
 -- opts.player_name: the logged-in character (default "Host")
+-- opts.guild_name: the character's guild (default: no guild)
 function Loader.stubs_only(opts)
 	opts = opts or {}
 	reset_globals()
-	local env = { clock = Clock.new(), player_name = opts.player_name }
+	local env = { clock = Clock.new(), player_name = opts.player_name, guild_name = opts.guild_name }
 	WowApi.install(env)
 	AceStubs.install(env)
+
+	-- Globals the stand-ins created, so tests can tell them apart from the addon's
+	env.stub_globals = {}
+	for name in pairs(_G) do
+		if not baseline[name] then env.stub_globals[name] = true end
+	end
 	return env
 end
 
--- opts.player_name: the logged-in character (default "Host")
+-- Globals that exist now and weren't there before any load or created by
+-- the stand-ins: the ones the addon created so far
+function Loader.addon_globals(env)
+	local names = {}
+	for name in pairs(_G) do
+		if not baseline[name] and not env.stub_globals[name] then table.insert(names, name) end
+	end
+	table.sort(names)
+	return names
+end
+
+-- opts.player_name, opts.guild_name: as in stubs_only
 -- opts.saved: SavedVariables from a previous session, e.g.
 --   { AztecGamblingDB = { global = { game_mode_index = 8 } } }
 function Loader.load(opts)

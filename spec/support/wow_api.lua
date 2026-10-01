@@ -59,10 +59,11 @@ function WowApi.install(env)
 		return nil
 	end
 
-	-- Returns the channel's number and name, or 0 when not in that channel
+	-- Returns the channel's number, name and instance ID (0 for a custom
+	-- channel), or 0 when not in that channel
 	_G.GetChannelName = function(name)
 		local number = env.channels[name]
-		if number then return number, name end
+		if number then return number, name, 0 end
 		return 0
 	end
 

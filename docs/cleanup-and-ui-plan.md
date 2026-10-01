@@ -53,6 +53,7 @@ Suggested order:
 - [ ] **#4 Say mode outside instances.** It can't be tested outside the game: confirm it in-game first, then decide on the fix described in improvements.md.
 - [ ] **#9 An empty message is sent to chat when rolls start.** Remove `roll_msg` from `StartRolls`. Found by the tests.
 - [ ] **#10 Rolls from players on another realm may be ignored.** Confirm it in-game with a player from a connected realm. If confirmed, run the roll message's name through `Ambiguate`, and add a test with a `Name-Realm` roll.
+- [ ] **#11 After a Blackjack tie, the companion window rolls the wrong range.** Send the 1-21 range to the companion windows when the tiebreaker deals again. Found by the tests.
 
 ## A2. Developer Test Command
 
@@ -94,7 +95,7 @@ This step changes where code lives, not how the game plays. **Every existing tes
 - [ ] **Update the tests.**
   - Check the internal messages instead of calls on the UI stand-in.
   - The logic no longer calls the UI, so `ui_stub.lua` should be needed only for the tests that load the windows.
-- [ ] **Fix the overwritten `PLAYER_LEAVING_WORLD` handler.**
+- [ ] **Fix the overwritten `PLAYER_LEAVING_WORLD` handler** (bug #12 in improvements.md, with a `pending` test in `slash_spec.lua`).
   - [AztecGambling.lua:1485](../AztecGambling.lua#L1485) registers it to save the window position.
   - [AGCommon.lua:75](../AGCommon.lua#L75) registers it on the same object to leave the custom channel.
   - AceEvent keeps one handler per event per object, so after `/ag join` the position stops being saved.
