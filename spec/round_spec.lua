@@ -26,7 +26,8 @@ describe("a round", function()
 			game:set_bet("500")
 
 			game:click_stage()
-			assert.are.same({ "Aztec Gambiling is now in session! Mode: HiLo, Bet: 500 gold", "Press 1 to Join!" }, game:chat_texts())
+			local expected_welcome = "Aztec Gambling v" .. loader.addon_version() .. " is now in session! Mode: HiLo, Bet: 500 gold"
+			assert.are.same({ expected_welcome, "Press 1 to Join!" }, game:chat_texts())
 			assert.are.equal("LastCall", game:stage())
 
 			game:say("Jayred", "1")
