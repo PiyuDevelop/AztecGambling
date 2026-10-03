@@ -4,6 +4,7 @@ local AztecGambling	= LibStub("AceAddon-3.0"):GetAddon("AztecGambling")
 local AceGUI = LibStub("AceGUI-3.0")
 -- Used by the RollCountdown widget's constructor near the bottom of this file
 local CreateFrame, UIParent = CreateFrame, UIParent
+local ADDON_VERSION = "12.1.0"
 
 -- Seconds players get to roll in each roll phase, and when to warn them in chat
 local ROLL_TIME_LIMIT = 45
@@ -226,11 +227,11 @@ function AztecGambling:StartGame()
 	-- In case of custom channel, we need to let the guild know! 
 	if ((self.chat.channel.const == "CHANNEL") and (self.db.global.custom_channel.index == nil)) then
 		self:JoinCustomChannel(nil)
-		SendChatMessage(AG_MESSAGES.CUSTOM_CHANNEL_ANNOUNCE(self.db.global.custom_channel.name), "GUILD")
+		SendChatMessage(AG_MESSAGES.CUSTOM_CHANNEL_ANNOUNCE(self.db.global.custom_channel.name, ADDON_VERSION), "GUILD")
 	end
 
 	-- Welcome Message!
-	local welcome_msg = AG_MESSAGES.WELCOME(self.game.mode.label, self.game.data.gold_amount)
+	local welcome_msg = AG_MESSAGES.WELCOME(self.game.mode.label, self.game.data.gold_amount, ADDON_VERSION)
 	self:MessageChat(welcome_msg)
 	if (self.game.mode.custom_intro ~= nil) then self:MessageChat(self.game.mode.custom_intro()) end
 	self:MessageChat(AG_MESSAGES.PRESS_TO_JOIN)
@@ -1355,7 +1356,7 @@ function AztecGambling:ConstructUI()
 	
 	-- AG_Frame - Represents the window frame of the addon
 	self.ui.AG_Frame = AceGUI:Create("Frame")
-	self.ui.AG_Frame:SetTitle("Aztec Gambling")
+	self.ui.AG_Frame:SetTitle("Aztec Gambling v"..ADDON_VERSION)
 	self.ui.AG_Frame:SetStatusText("")
 	self.ui.AG_Frame:SetLayout("Flow")
 	self.ui.AG_Frame:SetStatusTable(ag_ui_elements.main_frame)

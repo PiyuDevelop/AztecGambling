@@ -3,6 +3,7 @@
 AGClient = LibStub("AceAddon-3.0"):NewAddon("AGClient", "AceConsole-3.0", "AceComm-3.0", "AceEvent-3.0", "AceTimer-3.0", "AceHook-3.0", "AceSerializer-3.0")
 local AGClient	= LibStub("AceAddon-3.0"):GetAddon("AGClient")
 local AceGUI = LibStub("AceGUI-3.0")
+local ADDON_VERSION = "12.1.0"
 
 -- CONSTRUCTOR 
 function AGClient:OnInitialize()
@@ -231,7 +232,7 @@ function AGClient:ConstructUI()
 	
 	-- Constructor Calls -- 
 	self.ui.AG_Frame = AceGUI:Create("Frame")
-	self.ui.AG_Frame:SetTitle("Aztec Gambling")
+	self.ui.AG_Frame:SetTitle("Aztec Gambling v"..ADDON_VERSION)
 	self.ui.AG_Frame:SetStatusText("")
 	self.ui.AG_Frame:SetLayout("Flow")
 	self.ui.AG_Frame:SetStatusTable(ag_ui_elements.main_frame)
