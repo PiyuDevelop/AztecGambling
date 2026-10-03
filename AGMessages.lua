@@ -11,11 +11,11 @@
 AG_MESSAGES = {
 
 	-- Game start / join flow
-	CUSTOM_CHANNEL_ANNOUNCE = function(channel_name)
-		return "Just started a Gambling Round in a custom channel! To join in use /ag join or /join "..channel_name
+	CUSTOM_CHANNEL_ANNOUNCE = function(channel_name, version)
+		return "Aztec Gambling v"..version.." started a round in a custom channel! To join in use /ag join or /join "..channel_name
 	end,
-	WELCOME = function(mode_label, gold_amount)
-		return "Aztec Gambiling is now in session! Mode: "..mode_label..", Bet: "..gold_amount.." gold"
+	WELCOME = function(mode_label, gold_amount, version)
+		return "Aztec Gambling v"..version.." is now in session! Mode: "..mode_label..", Bet: "..gold_amount.." gold"
 	end,
 	PRESS_TO_JOIN = "Press 1 to Join!",
 	TELL_FRIENDS = function(channel_name)

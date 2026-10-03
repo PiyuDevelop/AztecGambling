@@ -40,6 +40,15 @@ function Loader.addon_files(toc)
 	return files
 end
 
+function Loader.addon_version(toc)
+	local toc_file = toc or DEFAULT_TOC
+	for line in io.lines(toc_file) do
+		local version = line:gsub("\r$", ""):match("^## Version:%s*(%S+)%s*$")
+		if version then return version end
+	end
+	error("No addon version found in " .. toc_file)
+end
+
 -- The stand-ins alone, without the addon: for testing the stand-ins themselves.
 -- opts.player_name: the logged-in character (default "Host")
 -- opts.guild_name: the character's guild (default: no guild)
